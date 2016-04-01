@@ -13,6 +13,7 @@
 /** 2-D Structured Grid class
  * TODO -- template on grid data type (for state vector)
  */
+template <typename Val>
 class StructuredGrid {
   //
   // PUBLIC TYPE DEFINITIONS
@@ -20,17 +21,18 @@ class StructuredGrid {
 public:
   typedef unsigned size_type;
   typedef StructuredGrid grid_type;
+  typedef Val value_type;
 private:
   //
   // PRIVATE DATA MEMBERS
   //
   size_type n_,m_; // Grid dimensions
   // TODO -- define this statically
-  std::vector<double> v_; // Grid data
-  std::vector<double> left_;  // Left boundary, size()==n_
-  std::vector<double> right_; // Right boundary, size()==n_
-  std::vector<double> top_;   // Top boundary, size()==m_-2
-  std::vector<double> bot_;   // Bot boundary, size()==m_-2
+  std::vector<value_type> v_; // Grid data
+  std::vector<value_type> left_;  // Left boundary, size()==n_
+  std::vector<value_type> right_; // Right boundary, size()==n_
+  std::vector<value_type> top_;   // Top boundary, size()==m_-2
+  std::vector<value_type> bot_;   // Bot boundary, size()==m_-2
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
@@ -45,7 +47,7 @@ private:
    * TODO -- Handle different boundary conditions,
    *         currently assumes Dirichlet
    */
-  double value(size_type i, size_type j) {
+  value_type value(size_type i, size_type j) {
     // Left Boundary
     if (j==0) {
       return left_[i];
@@ -83,7 +85,7 @@ public:
    * TODO -- pass boundary conditions
    * TODO -- pass curvilinear mapping
    */
-  StructuredGrid(size_type n, size_type m, std::vector<double>& v) {
+  StructuredGrid(size_type n, size_type m, std::vector<value_type>& v) {
     n_ = n;
     m_ = m;
     v_.resize(v.size());
@@ -123,7 +125,7 @@ public:
         : grid_(const_cast<StructuredGrid*>(grid)) {}
     // Public Member functions
   public:
-    double operator()(size_type i, size_type j) {
+    value_type operator()(size_type i, size_type j) {
       return grid_->value(i,j);
     }
   };

@@ -2,7 +2,9 @@
 
 #include <iostream>
 
-typedef StructuredGrid::size_type size_type;
+using value = int;
+
+typedef StructuredGrid<value>::size_type size_type;
 
 // DEBUG -- Print an array
 template <typename V>
@@ -21,13 +23,12 @@ void print_array(size_type n, size_type m, V v) {
 int main() {
   size_type n = 4;
   size_type m = 5;
-  // std::vector<double> v((n-2)*(m-2));
-  std::vector<double> 
-    v = { 1, 2, 3,
-          4, 5, 6 };
+  std::vector<value>
+            v = { 1, 2, 3,
+                  4, 5, 6 };
 
-  StructuredGrid grid(n,m,v);
-  StructuredGrid::Access val = grid.access();
+  StructuredGrid<value> grid(n,m,v);
+  StructuredGrid<value>::Access val = grid.access();
 
   // std::cout << val(1,1) << std::endl;
 
