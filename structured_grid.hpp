@@ -78,31 +78,31 @@ private:
    * @pre 0<=i<=n_-1
    * @pre 0<=j<=m_-1
    */
-  void set(size_type i, size_type j, value_type val) {
+  value_type set(size_type i, size_type j, value_type val) {
     // Left Boundary
     if (j==0) {
       left_[i] = val;
-      return;
+      return left_[i];
     }
     // Right Boundary
     else if (j==m_-1) {
       right_[i] = val;
-      return;
+      return right_[i];
     }
     // Top Boundary
     else if (i==0) {
       top_[j-1] = val;
-      return;
+      return top_[j-1];
     }
     // Bot Boundary
     else if (i==n_-1) {
       bot_[j-1] = val;
-      return;
+      return bot_[j-1];
     }
     // Interior point
     else {
       v_[(i-1)*(m_-2)+(j-1)] = val;
-      return;
+      return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
 public:
@@ -153,12 +153,12 @@ public:
   class Value {
     friend class Access;
     friend class StructuredGrid;
-    StructuredGrid* grid_;
     size_type i_,j_;
+    StructuredGrid* grid_;
   public:
     Value(size_type i, size_type j, StructuredGrid* grid)
       : i_(i), j_(j), grid_(grid) {}
-    Value& operator=(value_type val) {
+    value_type operator=(value_type val) {
       return grid_->set(i_,j_,val);
     }
     operator value_type() const { return grid_->value(i_,j_); }
