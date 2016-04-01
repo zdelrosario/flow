@@ -5,13 +5,8 @@
 #include <algorithm>
 #include <iostream>
 
-// #include <boost/range/adaptor/strided.hpp>
-// #include <boost/range/algorithm/copy.hpp>
-// using namespace boost::adaptors;
-// using namespace boost::assign;
-
 /** 2-D Structured Grid class
- * TODO -- template on grid data type (for state vector)
+ * @tparam Val Grid value type
  */
 template <typename Val>
 class StructuredGrid {
@@ -27,7 +22,7 @@ private:
   // PRIVATE DATA MEMBERS
   //
   size_type n_,m_; // Grid dimensions
-  // TODO -- define this statically
+  // TODO -- define these statically
   std::vector<value_type> v_; // Grid data
   std::vector<value_type> left_;  // Left boundary, size()==n_
   std::vector<value_type> right_; // Right boundary, size()==n_
@@ -69,7 +64,7 @@ private:
       return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
-  /** Return grid value at index pair
+  /** Set grid value at index pair
    * 
    * @param i Vertical index
    * @param j Horizontal index
@@ -187,38 +182,41 @@ public:
   // 
   // DEBUG METHODS
   // 
-  // DEBUG -- Print an array
+  /* Print an array */
   template <typename V>
   void print_array(size_type n, size_type m, V v) {
     // row
     for (size_type i=0; i<n; ++i) {
       // col
       for (size_type j=0; j<m-1; ++j) {
-        std::cout << v[i*m+j] << ",";
+        std::cout << v[i*m+j] << " , ";
       }
       std::cout << v[i*m+n] << std::endl;
     }
     return;
   }
-  // Print interior and boundary points
+  /* Print interior points */
   void printv() {
     // print interior
     print_array(n_-2,m_-2,v_);
+  }
+  /* Print boundary points */
+  void printb() {
     // Print left
     for (auto i: left_)
-      std::cout << i << ',';
+      std::cout << i << " , ";
     std::cout << std::endl;
     // Print right
     for (auto i: right_)
-      std::cout << i << ',';
+      std::cout << i << " , ";
     std::cout << std::endl;
     // Print top
     for (auto i: top_)
-      std::cout << i << ',';
+      std::cout << i << " , ";
     std::cout << std::endl;
     // Print bot
     for (auto i: bot_)
-      std::cout << i << ',';
+      std::cout << i << " , ";
     std::cout << std::endl;
   }
 

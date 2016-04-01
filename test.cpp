@@ -1,8 +1,10 @@
 #include "structured_grid.hpp"
 
 #include <iostream>
+#include <tuple>
 
-using value = int;
+#define len 2
+using value = std::tuple<int,int>;
 
 typedef StructuredGrid<value>::size_type size_type;
 
@@ -21,34 +23,20 @@ void print_array(size_type n, size_type m, V v) {
 }
 
 int main() {
-  size_type n = 4;
-  size_type m = 5;
-  std::vector<value>
-            v = { 1, 2, 3,
-                  4, 5, 6 };
+  size_type n = 7;
+  size_type m = 7;
+
+  std::vector<value> v( (n-2)*(m-2), std::make_tuple(0,0) );
+
+  size_type i = 2, j = 2;
+  v[i*(m-2)+j] = std::make_tuple(1,1);
 
   StructuredGrid<value> grid(n,m,v);
+  std::cout << "flag" << std::endl;
   StructuredGrid<value>::Access val = grid.access();
 
-  // std::cout << val(1,1) << std::endl;
-
-  // DEBUG -- print out the grid
-  for (size_type i=0; i<n; ++i) {
-    for (size_type j=0; j<m-1; ++j) {
-      std::cout << val(i,j) << ",";
-    }
-    std::cout << val(i,m-1) << std::endl;
-  }
-
-  // DEBUG -- change a value, print the grid
-  std::cout << std::endl;
-  val(2,2) = -1;
-  for (size_type i=0; i<n; ++i) {
-    for (size_type j=0; j<m-1; ++j) {
-      std::cout << val(i,j) << ",";
-    }
-    std::cout << val(i,m-1) << std::endl;
-  }
+  auto t = val(0,0);
+  std::cout << std::get<0>(v[0]) << std::endl;
 
   return 0;
 }
