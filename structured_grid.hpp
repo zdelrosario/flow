@@ -56,11 +56,11 @@ private:
     }
     // Top Boundary
     else if (i==0) {
-      return top_[j];
+      return top_[j-1];
     }
     // Bot Boundary
     else if (i==n_-1) {
-      return bot_[j];
+      return bot_[j-1];
     }
     // Interior point
     else {
@@ -103,9 +103,9 @@ public:
     right_[0] = right_[1]; right_[n_-1] = right_[n_-2];
 
     top_.resize(m_-2);
-    std::copy(v_.begin(),v_.begin()+n_-2,top_.begin());
+    std::copy(v_.begin(),v_.begin()+n_-1,top_.begin());
     bot_.resize(m_-2);
-    std::copy(v_.end()-(n_-2),v_.end(),bot_.begin());
+    std::copy(v_.end()-(n_-2)-1,v_.end(),bot_.begin());
   }
   // 
   // PUBLIC PROXY OBJECT
@@ -131,6 +131,11 @@ public:
   Access access() {
     return Access(this);
   }
+  /** Access return type
+   */
+  // class Value {
+
+  // };
   // 
   // DEBUG METHODS
   // 

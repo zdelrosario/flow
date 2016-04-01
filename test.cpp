@@ -29,8 +29,6 @@ int main() {
   StructuredGrid grid(n,m,v);
   StructuredGrid::Access val = grid.access();
 
-  grid.printv();
-
   // std::cout << val(1,1) << std::endl;
 
   // DEBUG -- print out the grid
