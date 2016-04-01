@@ -40,5 +40,15 @@ int main() {
     std::cout << val(i,m-1) << std::endl;
   }
 
+  // DEBUG -- change a value, print the grid
+  std::cout << std::endl;
+  val(2,2) = -1;
+  for (size_type i=0; i<n; ++i) {
+    for (size_type j=0; j<m-1; ++j) {
+      std::cout << val(i,j) << ",";
+    }
+    std::cout << val(i,m-1) << std::endl;
+  }
+
   return 0;
 }

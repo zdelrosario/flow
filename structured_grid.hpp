@@ -69,6 +69,42 @@ private:
       return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
+  /** Return grid value at index pair
+   * 
+   * @param i Vertical index
+   * @param j Horizontal index
+   * @param val Value to assign
+   * 
+   * @pre 0<=i<=n_-1
+   * @pre 0<=j<=m_-1
+   */
+  void set(size_type i, size_type j, value_type val) {
+    // Left Boundary
+    if (j==0) {
+      left_[i] = val;
+      return;
+    }
+    // Right Boundary
+    else if (j==m_-1) {
+      right_[i] = val;
+      return;
+    }
+    // Top Boundary
+    else if (i==0) {
+      top_[j-1] = val;
+      return;
+    }
+    // Bot Boundary
+    else if (i==n_-1) {
+      bot_[j-1] = val;
+      return;
+    }
+    // Interior point
+    else {
+      v_[(i-1)*(m_-2)+(j-1)] = val;
+      return;
+    }
+  }
 public:
   // 
   // PUBLIC MEMBER FUNCTIONS
@@ -112,6 +148,21 @@ public:
   // 
   // PUBLIC PROXY OBJECT
   // 
+  /** Access return type
+   */
+  class Value {
+    friend class Access;
+    friend class StructuredGrid;
+    StructuredGrid* grid_;
+    size_type i_,j_;
+  public:
+    Value(size_type i, size_type j, StructuredGrid* grid)
+      : i_(i), j_(j), grid_(grid) {}
+    Value& operator=(value_type val) {
+      return grid_->set(i_,j_,val);
+    }
+    operator value_type() const { return grid_->value(i_,j_); }
+  };
   /** @class StructuredGrid::Access
    *  @brief Proxy object for accessing grid data
    */
@@ -125,19 +176,14 @@ public:
         : grid_(const_cast<StructuredGrid*>(grid)) {}
     // Public Member functions
   public:
-    value_type operator()(size_type i, size_type j) {
-      return grid_->value(i,j);
+    Value operator()(size_type i, size_type j) {
+      return Value(i,j,grid_);
     }
   };
   // Return access object
   Access access() {
     return Access(this);
   }
-  /** Access return type
-   */
-  // class Value {
-
-  // };
   // 
   // DEBUG METHODS
   // 
