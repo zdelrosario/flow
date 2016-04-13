@@ -140,7 +140,7 @@ public:
     // Iterate horizontally over 2D grid
     for (size_type i=0; i+2<m_; ++i) {
       top_[i] = *(v_.begin()+i);
-      bot_[i] = *(v_.end()-(m_-1)+i);
+      bot_[i] = *(v_.end()-(m_-2)+i);
     }
   }
   // 
@@ -192,11 +192,21 @@ public:
     for (size_type i=0; i<n; ++i) {
       // col
       for (size_type j=0; j<m-1; ++j) {
-        std::cout << v[i*m+j] << " , ";
+        print_state(v[i*m+j]);
+        std::cout << " , ";
       }
-      std::cout << v[i*m+n] << std::endl;
+      print_state(v[i*m+n]);
+      std::cout << std::endl;
     }
     return;
+  }
+  /* Print a state vector */
+  void print_state(value_type v) {
+    std::cout << "(";
+    for (size_type i=0; i+1<d_; ++i) {
+      std::cout << v[i] << ",";
+    }
+    std::cout << v[d_-1] << ")";
   }
   /* Print interior points */
   void printv() {
@@ -207,19 +217,23 @@ public:
   void printb() {
     // Print left
     for (auto i: left_)
-      std::cout << i << " , ";
+      print_state(i);
+      std::cout << " , ";
     std::cout << std::endl;
     // Print right
     for (auto i: right_)
-      std::cout << i << " , ";
+      print_state(i);
+      std::cout << " , ";
     std::cout << std::endl;
     // Print top
     for (auto i: top_)
-      std::cout << i << " , ";
+      print_state(i);
+      std::cout << " , ";
     std::cout << std::endl;
     // Print bot
     for (auto i: bot_)
-      std::cout << i << " , ";
+      print_state(i);
+      std::cout << " , ";
     std::cout << std::endl;
   }
 
