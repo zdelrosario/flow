@@ -32,7 +32,9 @@ INCLUDES += -I.
 INCLUDES += -I/home/zach/Git/thrust
 
 # Define CXX compile flags
-CXXFLAGS += -std=c++11 -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
+# CXXFLAGS += -std=c++11 -O3 -funroll-loops -W -Wall -Wextra #-Wfatal-errors
+# Debug flags
+CXXFLAGS += -std=c++11 -O0 -g -funroll-loops -W -Wall -Wextra #-Wfatal-errors
 
 # Force Thrust to use OpenMP as its device system
 CXXFLAGS += -DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_OMP
