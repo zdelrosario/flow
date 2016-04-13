@@ -21,7 +21,7 @@ private:
   //
   // PRIVATE DATA MEMBERS
   //
-  size_type n_,m_; // Grid dimensions
+  size_type n_,m_,d_; // Grid dimensions
   // TODO -- define these statically
   std::vector<value_type> v_; // Grid data
   std::vector<value_type> left_;  // Left boundary, size()==n_
@@ -116,9 +116,9 @@ public:
    * TODO -- pass boundary conditions
    * TODO -- pass curvilinear mapping
    */
-  StructuredGrid(size_type n, size_type m, std::vector<value_type>& v) {
-    n_ = n;
-    m_ = m;
+  StructuredGrid(size_type n, size_type m, 
+                 std::vector<value_type>& v, size_type d) {
+    n_ = n; m_ = m; d_ = d;
     v_.resize(v.size());
     std::copy(v.begin(),v.end(),v_.begin());
 
@@ -136,9 +136,12 @@ public:
     right_[0] = right_[1]; right_[n_-1] = right_[n_-2];
 
     top_.resize(m_-2);
-    std::copy(v_.begin(),v_.begin()+n_-1,top_.begin());
     bot_.resize(m_-2);
-    std::copy(v_.end()-(n_-2)-1,v_.end(),bot_.begin());
+    // Iterate horizontally over 2D grid
+    for (size_type i=0; i+2<m_; ++i) {
+      top_[i] = *(v_.begin()+i);
+      bot_[i] = *(v_.end()-(m_-1)+i);
+    }
   }
   // 
   // PUBLIC PROXY OBJECT
@@ -182,7 +185,7 @@ public:
   // 
   // DEBUG METHODS
   // 
-  /* Print an array */
+  /* Print a 2D array's values */
   template <typename V>
   void print_array(size_type n, size_type m, V v) {
     // row

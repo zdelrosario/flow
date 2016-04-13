@@ -1,10 +1,10 @@
 #include "structured_grid.hpp"
 
 #include <iostream>
-#include <tuple>
+#include <array>
 
 #define len 2
-using value = std::tuple<int,int>;
+using value = std::array<int,len>;
 
 typedef StructuredGrid<value>::size_type size_type;
 
@@ -25,18 +25,19 @@ void print_array(size_type n, size_type m, V v) {
 int main() {
   size_type n = 7;
   size_type m = 7;
+  value a_zeros = {0,0};
+  value a_ones  = {1,1};
 
-  std::vector<value> v( (n-2)*(m-2), std::make_tuple(0,0) );
+  std::vector<value> v( (n-2)*(m-2), a_zeros );
 
   size_type i = 2, j = 2;
-  v[i*(m-2)+j] = std::make_tuple(1,1);
+  v[i*(m-2)+j] = a_ones;
 
-  StructuredGrid<value> grid(n,m,v);
-  std::cout << "flag" << std::endl;
+  StructuredGrid<value> grid(n,m,v,len);
   StructuredGrid<value>::Access val = grid.access();
 
-  auto t = val(0,0);
-  std::cout << std::get<0>(v[0]) << std::endl;
+  value t = val(2,2);
+  std::cout << "(" << t[0] << "," << t[1] << ")" << std::endl;
 
   return 0;
 }
