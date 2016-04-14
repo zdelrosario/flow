@@ -25,7 +25,11 @@ void print_array(size_type n, size_type m, V v) {
 
 int main() {
   /* --- TEST MESH GENERATION --- */
-  make_flat_plate();
+  int Nt = 34;
+  int Nbl= 22;
+  int Mt = 34;
+  std::vector<value> X(Nt*Mt);
+  make_flat_plate(Nt,Nbl,Mt,X);
 
   /* --- TEST GRID HANDLING --- */
   size_type n = 5;
