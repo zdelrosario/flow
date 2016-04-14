@@ -1,0 +1,44 @@
+#ifndef NEWTON // Include guard
+#define NEWTON
+
+#include <iostream>
+
+/** Newton-Rhapson rootfinding method
+ * @brief Finds the root of a function via
+ *        successive local linear approximation
+ *
+ * @tparam V  Input & output type for F and dF
+ * @tparam F  Function from V->V
+ * @tparam dF Function from V->V
+ *
+ * @param max Maximum iteraion count (default=1000)
+ * @param eps Convergence tolerance, as measured
+ *            by absolute function value (default=1e-6)
+ * 
+ * @pre x0 within the region of convergence for
+ *      Newton-Rhapson on f
+ * @pre df = d/dx(f)
+ * 
+ * @return res Root of provided f
+ */
+template <typename V, typename F, typename dF>
+V newton(V x0, F f, dF df, unsigned long max=1000, double eps=1e-6) {
+  // Setup
+  V fk = f(x0); V fpk= df(x0); V delta;
+  unsigned long it = 0;
+  // Continue while not converged and 
+  // under iteration limit
+  while ((std::abs(fk)>eps)&&(it<max)) {
+    // Take newton step
+    delta = -fk/fpk;
+    x0    = x0 + delta;
+    // Update function values
+    fk  = f(x0);
+    fpk = df(x0);
+    // Iterate the counter
+    ++it;
+  }
+  return x0;
+}
+
+#endif // NEWTON
