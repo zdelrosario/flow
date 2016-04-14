@@ -42,3 +42,19 @@ V newton(V x0, F f, dF df, unsigned long max=1000, double eps=1e-6) {
 }
 
 #endif // NEWTON
+
+/** TEST CODE
+#include <iostream>
+#include <cmath>
+
+#include "newton.hpp"
+
+int main() {
+  float x0 = 1.0;
+  float xs = newton( x0, 
+                     [](float x) {return cos(x);}, 
+                     [](float x) {return -sin(x);} );
+
+  std::cout << xs << std::endl;
+}
+ */
