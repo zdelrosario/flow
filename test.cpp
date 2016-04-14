@@ -1,4 +1,5 @@
 #include "structured_grid.hpp"
+#include "grid_mapping.hpp"
 
 #include <iostream>
 #include <array>
@@ -23,6 +24,10 @@ void print_array(size_type n, size_type m, V v) {
 }
 
 int main() {
+  /* --- TEST MESH GENERATION --- */
+  make_flat_plate();
+
+  /* --- TEST GRID HANDLING --- */
   size_type n = 5;
   size_type m = 6;
 
