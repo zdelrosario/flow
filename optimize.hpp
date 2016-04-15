@@ -61,7 +61,6 @@ V secant(V x0, V x1, F f, double eps=1e-6, unsigned long max=1000) {
     // Iterate the counter
     ++it;
   }
-  std::cout << "it=" << it << std::endl;
   return x1;
 }
 
