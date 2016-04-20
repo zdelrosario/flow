@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <array>
+#include <string>
+#include <fstream>
 
 #define len 2
 using coord = std::array<float,len>;
@@ -31,6 +33,8 @@ int main() {
   int Mt = 34;
   std::vector<coord> X(Nt*Mt);
   make_flat_plate(Nt,Nbl,Mt,X);
+
+  writeout("grid.dat",X);
 
   /* --- TEST GRID HANDLING --- */
   size_type n = 5;
