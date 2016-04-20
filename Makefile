@@ -11,8 +11,8 @@ UNAME := $(shell uname)
 
 # Define the C++ compiler to use
 ifeq ($(UNAME), Linux)
-  CXX := clang++-3.5
-  # CXX := g++ -fopenmp // for openmp stuff
+  # CXX := clang++-3.5
+  CXX := g++
 endif
 ifeq ($(UNAME), Darwin)
   CXX := clang++
