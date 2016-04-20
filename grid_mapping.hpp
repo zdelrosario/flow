@@ -27,16 +27,11 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
   // int Nt  = 34; // Total vertical mesh points
   // int Nbl = 22; // Boundary layer vertical points
 
-  float H = 0.5;        // Domain height
+  float H = 0.1;        // Domain height
   float L = 0.1;        // Plate length
-  float y_fm = 5.4e-4;  // 
+  float y_fm = 5.4e-4;  // Height of fine mesh
   float r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
   float dy_min = r_min*y_fm; // Minimum spacing
-
-  // Space warping operator
-  auto y_i = [&y_fm,&Nbl](int i, float k) {
-    return y_fm*(exp(k*(i-2)/(Nbl-2))-1)/(exp(k)-1);
-  };
 
   /* --- FIND PARAMETER VALUES --- */
   // Objective function for k_fm
@@ -54,6 +49,34 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
   // Find k_cm
   float k_cm = secant(7.0,8.0,f_cm);
   
+  /* --- BUILD GRID --- */
+  // Fine mesh vertical points
+  auto y_i = [&y_fm,&Nbl,&k_fm](int i) {
+    return y_fm*(exp(k_fm*(i-2)/(Nbl-2))-1)/(exp(k_fm)-1);
+  };
+  // Coarse mesh vertical points
+  auto y_j = [&](int j) {
+    return (H-y_fm)*(exp(k_cm*(j-Nbl)/(Nt-Nbl))-1)/(exp(k_cm)-1)+y_fm;
+  };
+
+  // Piecewise vertical points
+  auto y_mesh = [&](int i) {
+    if (i<=Nbl) {
+      return y_i(i);
+    }
+    else {
+      return y_j(i);
+    }
+  };
+  // Store grid values
+  for (int i=0; i<Nt; ++i) {
+    for (int j=0; j<Mt; ++j) {
+      // std::cout << v[i*Mt+j][0] << "->";
+      v[i*Mt+j][0] = L/Mt * j;  // X-value
+      v[i*Mt+j][1] = y_mesh(i); // Y-value
+      // std::cout << v[i*Mt+j][0] << std::endl;
+    }
+  }
 
 }
 

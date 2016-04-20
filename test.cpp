@@ -5,6 +5,7 @@
 #include <array>
 
 #define len 2
+using coord = std::array<float,len>;
 using value = std::array<int,len>;
 
 typedef StructuredGrid<value>::size_type size_type;
@@ -28,7 +29,7 @@ int main() {
   int Nt = 34;
   int Nbl= 22;
   int Mt = 34;
-  std::vector<value> X(Nt*Mt);
+  std::vector<coord> X(Nt*Mt);
   make_flat_plate(Nt,Nbl,Mt,X);
 
   /* --- TEST GRID HANDLING --- */
@@ -53,13 +54,13 @@ int main() {
 
   // grid.printv();
 
-  for (size_type i=0; i<n; ++i) {
-    for (size_type j=0; j<m; ++j) {
-      grid.print_state(val(i,j));
-      std::cout << " , ";
-    }
-    std::cout << std::endl;
-  }
+  // for (size_type i=0; i<n; ++i) {
+  //   for (size_type j=0; j<m; ++j) {
+  //     grid.print_state(val(i,j));
+  //     std::cout << " , ";
+  //   }
+  //   std::cout << std::endl;
+  // }
 
   return 0;
 }
