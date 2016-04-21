@@ -6,9 +6,8 @@
 #include <string>
 #include <fstream>
 
-#define len 2
-using coord = std::array<float,len>;
-using value = std::array<int,len>;
+using coord = std::array<float,2>; // Grid coordinates
+using value = std::array<int,2>;   // State vector values
 
 typedef StructuredGrid<value>::size_type size_type;
 
@@ -33,7 +32,6 @@ int main() {
   int Mt = 34;
   std::vector<coord> X(Nt*Mt);
   make_flat_plate(Nt,Nbl,Mt,X);
-
   writeout("grid.dat",X);
 
   /* --- TEST GRID HANDLING --- */

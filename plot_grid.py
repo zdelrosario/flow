@@ -10,9 +10,11 @@ for line in f:
         X.append(float(val[0]))
         Y.append(float(val[1]))
 
+d = X[1]-X[0]
+
 # Plot
 fig = plt.figure()
 plt.plot(X,Y,'.k')
-plt.xlim([min(X)-1,max(X)+1])
-plt.ylim([min(Y)-1,max(Y)+1])
+plt.xlim([min(X)-d,max(X)+d])
+plt.ylim([min(Y)-d,max(Y)+d])
 plt.show()
