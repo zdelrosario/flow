@@ -117,3 +117,10 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+### Specific Files
+*.swp
+*.m
+*.dat
+test
+.deps
