@@ -8,7 +8,7 @@
 /** 2-D Structured Grid class
  * @tparam Val Grid value type
  */
-template <typename Val>
+template <typename X, typename Val>
 class StructuredGrid {
   //
   // PUBLIC TYPE DEFINITIONS
@@ -21,8 +21,10 @@ private:
   //
   // PRIVATE DATA MEMBERS
   //
-  size_type n_,m_,d_; // Grid dimensions
-  // TODO -- define these statically
+  size_type n_,m_; // Grid dimensions
+  // Grid points
+  std::vector<X> x_; // Grid points
+  // Grid cell values
   std::vector<value_type> v_; // Grid data
   std::vector<value_type> left_;  // Left boundary, size()==n_
   std::vector<value_type> right_; // Right boundary, size()==n_
@@ -100,27 +102,56 @@ private:
       return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
+  /** Vector file writeout
+   * @brief Writes a set of vector points 
+   *        to a formatted data file
+   *
+   * @tparam V Array-like container, n-Dimensional
+   * 
+   * @param outputfile String which defines output filename
+   * @param v Vector which defines gridpoints
+   * 
+   * @post A file with name 'outputfile' is written to the
+   *       local directory with the gridpoints
+   */
+  template <typename V>
+  void writeout(std::string outputfile, V& v) {
+    std::ofstream f_out(outputfile.c_str());
+    // f_out.precision(5);
+    // Write out elements
+    for (auto it=v.begin(); it!=v.end(); ++it) {
+      // f_out << (*it)[0] << "," << (*it)[1] << std::endl;
+      for (auto jt=it->begin(); (jt+1)!=it->end(); ++jt)
+        f_out << (*jt) << ",";
+      f_out << (*it).back() << std::endl;
+    }
+  }
 public:
   // 
   // PUBLIC MEMBER FUNCTIONS
   // 
   /** Public constructor
-   *  Constructs a grid of given dimensions and initial conditions
+   *  Constructs a cell grid of given dimensions and initial conditions
    * 
-   * @param n Height of grid
-   * @param m Width of grid
-   * @param v Initial conditions of grid
+   * @param n Number of vertical grid elements
+   * @param m Number of horizontal grid elements
+   * @param v Initial conditions of cells
+   * @param x Vector of physical cell corner points
    * 
    * @pre (n-2)*(m-2) == v.size()
+   * @pre n*m == x.size()
    *
-   * TODO -- pass boundary conditions
+   * TODO -- pass boundary conditions (handle here?)
    * TODO -- pass curvilinear mapping
    */
   StructuredGrid(size_type n, size_type m, 
-                 std::vector<value_type>& v, size_type d) {
-    n_ = n; m_ = m; d_ = d;
+                 std::vector<value_type>& v,
+                 std::vector<X>& x) {
+    n_ = n; m_ = m;
     v_.resize(v.size());
     std::copy(v.begin(),v.end(),v_.begin());
+    x_.resize(x.size());
+    std::copy(x.begin(),x.end(),x_.begin());
 
     // TODO -- allow for non-Dirichlet BC's
 
@@ -183,6 +214,18 @@ public:
     return Access(this);
   }
   // 
+  // FILE HANDLING METHODS
+  // 
+  /* Writes the current cell values to output */
+  void write_values(std::string outputfile) {
+    writeout(outputfile, v_);
+  }
+  /* Writes the current cell values to output */
+  void write_grid(std::string outputfile) {
+    writeout(outputfile, x_);
+  }
+
+  // 
   // DEBUG METHODS
   // 
   /* Print a 2D array's values */
@@ -203,10 +246,10 @@ public:
   /* Print a state vector */
   void print_state(value_type v) {
     std::cout << "(";
-    for (size_type i=0; i+1<d_; ++i) {
+    for (size_type i=0; i+1<v.size(); ++i) {
       std::cout << v[i] << ",";
     }
-    std::cout << v[d_-1] << ")";
+    std::cout << v.back() << ")";
   }
   /* Print interior points */
   void printv() {
