@@ -32,7 +32,6 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
   float L = 0.1;        // Plate length
   float y_fm = 5.4e-4;  // Height of fine mesh
   float r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
-  float dy_min = r_min*y_fm; // Minimum spacing
 
   /* --- FIND PARAMETER VALUES --- */
   // Objective function for k_fm
@@ -81,7 +80,7 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
 
 }
 
-/** Grid file writeout
+/** Grid file writeout -- DEPRECIATED
  * @brief Writes a set of x,y points to a 
  *        formatted data file
  *
@@ -93,14 +92,14 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
  * @post A file with name 'outputfile' is written to the
  *       local directory with the gridpoints
  */
-template <typename V>
-void writeout(std::string outputfile, V& v) {
-  std::ofstream f_out(outputfile.c_str());
-  // f_out.precision(5);
-  // Write out elements
-  for (auto it=v.begin(); it!=v.end(); ++it) {
-    f_out << (*it)[0] << "," << (*it)[1] << std::endl;
-  }
-}
+// template <typename V>
+// void writeout(std::string outputfile, V& v) {
+//   std::ofstream f_out(outputfile.c_str());
+//   // f_out.precision(5);
+//   // Write out elements
+//   for (auto it=v.begin(); it!=v.end(); ++it) {
+//     f_out << (*it)[0] << "," << (*it)[1] << std::endl;
+//   }
+// }
 
 #endif // MAP
