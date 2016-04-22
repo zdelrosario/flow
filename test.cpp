@@ -7,7 +7,7 @@
 #include <fstream>
 
 using coord = std::array<float,2>; // Grid coordinates
-using value = std::array<int,2>;   // State vector values
+using value = std::array<float,3>; // State vector values
 
 typedef StructuredGrid<coord,value>::size_type size_type;
 
@@ -35,19 +35,19 @@ int main() {
   make_flat_plate(Nt,Nbl,Mt,X); // boundary layer simulation
 
   /* --- TEST GRID HANDLING --- */
-  value u_inf;  u_inf[0] = 1; u_inf[1] = 1;   // Uniform flow condition
-  value u_wall; u_wall[0] = 0; u_wall[1] = 0; // Wall (dirichlet) condition
-  std::vector<value> v( (Nt-2)*(Mt-2), u_inf );
+  value u_inf;  u_inf[0] = 1; u_inf[1] = 1; u_inf[2] = 0;    // Uniform flow condition
+  value u_wall; u_wall[0] = 1; u_wall[1] = 0; u_wall[2] = 0; // Wall (dirichlet) condition
+  std::vector<value> V( (Nt-2)*(Mt-2), u_inf );
   // Set dirichlet condition on bottom
   for (int j = 0; j<Mt-2; ++j) {
-    v[(Nt-3)*(Mt-2)+j] = u_wall;
+    V[(Nt-3)*(Mt-2)+j] = u_wall;
   }
 
-  StructuredGrid<coord,value> grid(Nt,Mt,v,X);
-  StructuredGrid<coord,value>::Access val = grid.access();
+  StructuredGrid<coord,value> grid(Nt,Mt,V,X);
 
-  value t = val(2,2);
-  std::cout << "(" << t[0] << "," << t[1] << ")" << std::endl;
+  // StructuredGrid<coord,value>::Access val = grid.access();
+  // value t = val(2,2);
+  // std::cout << "(" << t[0] << "," << t[1] << ")" << std::endl;
 
   // DEBUG -- write values to file
   grid.write_grid("grid.dat");      // grid points
