@@ -137,13 +137,13 @@ public:
   /** Public constructor
    *  Constructs a cell grid of given dimensions and initial conditions
    * 
-   * @param n Number of vertical grid elements
-   * @param m Number of horizontal grid elements
+   * @param n Number of total vertical cells
+   * @param m Number of total horizontal cells
    * @param v Initial conditions of cells
    * @param x Vector of physical cell corner points
    * 
-   * @pre (n-2)*(m-2) == v.size()
-   * @pre n*m == x.size()
+   * @pre (n-2)*(m-2) == v.size(), number of interior cells
+   * @pre (n-1)*(m-1) == x.size(), number of cell corner points
    *
    * TODO -- pass boundary conditions (handle here?)
    * TODO -- pass curvilinear mapping
@@ -217,6 +217,7 @@ public:
       return Value(i,j,grid_);
     }
   };
+  
   // Return access object
   Access access() {
     return Access(this);
@@ -250,11 +251,37 @@ public:
     Value value() {
       return Value(this->iy(),this->jx(),grid_);
     }
+    const size_type idx() {
+      return idx_;
+    }
     // Returns value of cell at relative index
-    Value value(size_type di, size_type dj) {
+    Value value(int di, int dj) {
       return Value(iy()+di,jx()+dj,grid_);
     }
+    // Returns neighbor cell at relative index
+    Cell neighbor(int di, int dj) {
+      return grid_->cell(this->iy()+di,this->jx()+dj);
+    }
+    /** Returns cell corner point
+     * @param n Corner point index
+     * @pre 1<=n<=4
+     */
+    X x(size_type n) {
+      if (n==1) {
+        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()];
+      }
+      else if (n==2) {
+        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()+1];
+      }
+      else if (n==3) {
+        return grid_->x_[(this->iy()+1)*(grid_->m_-1)+this->jx()+1];
+      }
+      else if (n==4) {
+        return grid_->x_[(this->iy()+1)*(grid_->m_-1)+this->jx()];
+      }
+    }
    };
+
    // Return cell object by id number
    Cell cell(size_type idx) {
     return Cell(this,idx);
