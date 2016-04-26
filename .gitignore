@@ -122,5 +122,7 @@ ENV/
 *.swp
 *.m
 *.dat
-test
 .deps
+# Executables
+test
+solver
