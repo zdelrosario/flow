@@ -73,7 +73,7 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
     for (int j=0; j<Mt; ++j) {
       // std::cout << v[i*Mt+j][0] << "->";
       v[i*Mt+j][0] = L/Mt * j;  // X-value
-      v[i*Mt+j][1] = y_mesh(i); // Y-value
+      v[i*Mt+j][1] = y_mesh(Nt-i-1); // Y-value
       // std::cout << v[i*Mt+j][0] << std::endl;
     }
   }
