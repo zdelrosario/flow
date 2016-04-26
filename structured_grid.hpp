@@ -49,6 +49,7 @@ private:
    *         currently assumes Dirichlet
    */
   value_type value(size_type i, size_type j) {
+// std::cout << "grid_value (" << i << "," << j << ")" << std::endl;
     // Left Boundary
     if (j==0) {
       return left_[i];
@@ -205,7 +206,9 @@ public:
       return grid_->set(i_,j_,val);
     }
     /* Implicit Conversion Operator */
-    operator value_type() const { return grid_->value(i_,j_); }
+    operator value_type() const { 
+      return grid_->value(i_,j_); 
+    }
     /* Const Subscript Operator */
     // TODO -- define type as template
     float operator[](size_type ind) const {
@@ -252,33 +255,52 @@ public:
     // Pointer back to grid
     StructuredGrid* grid_;
     // Cell index
-    size_type idx_;
+    size_type i_,j_;
     // Private constructor
-    Cell(const StructuredGrid* grid, size_type idx)
-        : grid_(const_cast<StructuredGrid*>(grid)), idx_(idx) {}
+    Cell(const StructuredGrid* grid, size_type i, size_type j)
+        : grid_(const_cast<StructuredGrid*>(grid)), i_(i), j_(j) {}
   public:
     // Public state vector type
     typedef value_type CellValue;
     // Public Member functions
     size_type iy() {
-      return floor(idx_/(grid_->m_-2))+1;
+      return i_;
     }
     size_type jx() {
-      return idx_ % (grid_->m_-2)+1;
+      return j_;
     }
     Value value() {
-      return Value(this->iy(),this->jx(),grid_);
+      return Value(i_,j_,grid_);
     }
+    /* Interior cell index */
     size_type idx() const {
-      return idx_;
+      return (i_-1)*(grid_->m_-2)+j_-1;
     }
     // Returns value of cell at relative index
     Value value(int di, int dj) {
-      return Value(iy()+di,jx()+dj,grid_);
+      // Compute indices
+      di = di+i_;
+      dj = dj+j_;
+      // Bound indices
+      if (di<0) di=0;
+      else if (di>int(grid_->n_-1)) di=int(grid_->n_-1);
+      if (dj<0) dj=0;
+      else if (dj>int(grid_->m_-1)) dj=int(grid_->m_-1);
+      // Access value
+      return Value(di,dj,grid_);
     }
     // Returns neighbor cell at relative index
     Cell neighbor(int di, int dj) {
-      return grid_->cell(this->iy()+di,this->jx()+dj);
+      // Compute indices
+      di = di+i_;
+      dj = dj+j_;
+      // Bound indices
+      if (di<0) di=0;
+      else if (di>int(grid_->n_-1)) di=int(grid_->n_-1);
+      if (dj<0) dj=0;
+      else if (dj>int(grid_->m_-1)) dj=int(grid_->m_-1);
+      // Access cell
+      return grid_->cell(di,dj);
     }
     /** Returns cell corner point
      * @param n Corner point index
@@ -286,16 +308,16 @@ public:
      */
     X x(size_type n) {
       if (n==1) {
-        return grid_->x_[(this->iy()-1)*(grid_->m_-1)+(this->jx()-1)];
+        return grid_->x_[(i_-1)*(grid_->m_-1)+(j_-1)];
       }
       else if (n==2) {
-        return grid_->x_[(this->iy()-1)*(grid_->m_-1)+this->jx()];
+        return grid_->x_[(i_-1)*(grid_->m_-1)+j_];
       }
       else if (n==3) {
-        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()];
+        return grid_->x_[i_*(grid_->m_-1)+j_];
       }
       else if (n==4) {
-        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()-1];
+        return grid_->x_[i_*(grid_->m_-1)+j_-1];
       }
       else {
         assert(0);
@@ -311,16 +333,16 @@ public:
     }
    };
 
-   // Return cell object by id number
+   // Return cell object by interior id number
    Cell cell(size_type idx) {
-    return Cell(this,idx);
+    return Cell(this,floor(idx/(m_-2))+1,idx%(m_-2)+1);
    }
    /** Return cell by id pair
-    * @pre 1 <= i <= n_-1
-    * @pre 1 <= j <= m_-1
+    * @pre 0 <= i <= n_-1
+    * @pre 0 <= j <= m_-1
     */
    Cell cell(size_type i, size_type j) {
-    return Cell(this,(i-1)*(m_-2)+(j-1));
+    return Cell(this,i,j);
    }
   //
   // CELL ITERATOR

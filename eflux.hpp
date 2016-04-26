@@ -1,5 +1,11 @@
 #ifndef EFLUX // Include guard
 #define EFLUX
+/** Euler Flux Calculator
+ * 
+ * Currently throws a segfault -- check that we're
+ * not accessing out-of-bounds cells in the 4th order
+ * difference term
+ */
 
 #include <vector>     // data handling
 #include <algorithm>  // std::copy(), std::transform()
@@ -175,6 +181,9 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
   for ( ; cell_begin!=cell_end; ++cell_begin) {
     // Dereference cell
     auto c = *cell_begin;
+    // DEBUG -- Print cell index
+std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
+std::cout << std::endl;
     /* --- COMPUTE +1/2 BOUNDARIES --- */
     // Compute coefficients
     Sx = std::max(sense_x(c),sense_x(c.neighbor(1,0)));

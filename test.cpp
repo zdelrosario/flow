@@ -27,9 +27,9 @@ void print_array(size_type n, size_type m, V v) {
 
 int main() {
   /* --- SOLVER PARAMETERS --- */
-  float     h = 1e-3;       // time step
-  size_type iter_max = 1e3; // max iterations
-  size_type n = 0;          // current iterations
+  // float     h = 1e-3;       // time step
+  // size_type iter_max = 1e3; // max iterations
+  // size_type n = 0;          // current iterations
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   int Nt = 34; // Total vertical cells
@@ -59,7 +59,7 @@ int main() {
 
   // DEBUG -- test Cell object
   StructuredGrid<coord,value>::cell_iterator it_begin = grid.cell_begin();
-  StructuredGrid<coord,value>::cell_iterator it_end = grid.cell_begin();
+  // StructuredGrid<coord,value>::cell_iterator it_end = grid.cell_begin();
 
   (*it_begin).value(-1,-1).print(); std::cout << std::endl;
   std::cout << (*it_begin).idx() << std::endl;
