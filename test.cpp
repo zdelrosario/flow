@@ -45,9 +45,17 @@ int main() {
 
   StructuredGrid<coord,value> grid(Nt,Mt,V,X);
 
+  // DEBUG -- test Access object
   // StructuredGrid<coord,value>::Access val = grid.access();
   // value t = val(2,2);
   // std::cout << "(" << t[0] << "," << t[1] << ")" << std::endl;
+
+  // DEBUG -- test Cell object
+  // StructuredGrid<coord,value>::Cell c = grid.cell((Nt-2)*(Mt-2)-1);
+  StructuredGrid<coord,value>::cell_iterator it_begin = grid.cell_begin();
+  StructuredGrid<coord,value>::cell_iterator it_end = grid.cell_begin();
+  (*it_begin).value(-1,-1).print(); std::cout << std::endl;
+
 
   // DEBUG -- write values to file
   grid.write_grid("grid.dat");      // grid points

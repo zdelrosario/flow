@@ -1,9 +1,13 @@
 #ifndef GRID // Include guard
 #define GRID
 
-#include <vector>
-#include <algorithm>
-#include <iostream>
+#include <vector>     // data handling
+#include <algorithm>  // std::copy
+#include <iostream>   // debug
+#include <cmath>      // floor
+#include <fstream>    // file handling
+
+#include "Util.hpp"   // totally_ordered
 
 /** 2-D Structured Grid class
  * @tparam Val Grid value type
@@ -175,7 +179,7 @@ public:
     }
   }
   // 
-  // PUBLIC PROXY OBJECT
+  // PUBLIC PROXY OBJECTS
   // 
   /** Access return type
    */
@@ -191,6 +195,10 @@ public:
       return grid_->set(i_,j_,val);
     }
     operator value_type() const { return grid_->value(i_,j_); }
+    // DEBUG -- Print value to console
+    void print() {
+      grid_->print_state(grid_->value(i_,j_));
+    }
   };
   /** @class StructuredGrid::Access
    *  @brief Proxy object for accessing grid data
@@ -213,6 +221,86 @@ public:
   Access access() {
     return Access(this);
   }
+  /** @class StructuredGrid::Cell
+   *  @brief Proxy object for a grid cell
+   * 
+   * @param grid Parent grid
+   * @param idx  Cell id number
+   * 
+   * @pre 0 <= idx <= v_.size()
+   */
+  class Cell {
+    // Allow StructuredGrid to access this object
+    friend class StructuredGrid;
+    // Pointer back to grid
+    StructuredGrid* grid_;
+    // Cell index
+    size_type idx_;
+    // Private constructor
+    Cell(const StructuredGrid* grid, size_type idx)
+        : grid_(const_cast<StructuredGrid*>(grid)), idx_(idx) {}
+    // Public Member functions
+  public:
+    size_type iy() {
+      return floor(idx_/(grid_->m_-2))+1;
+    }
+    size_type jx() {
+      return idx_ % (grid_->m_-2)+1;
+    }
+    Value value() {
+      return Value(this->iy(),this->jx(),grid_);
+    }
+    // Returns value of cell at relative index
+    Value value(size_type di, size_type dj) {
+      return Value(iy()+di,jx()+dj,grid_);
+    }
+   };
+   // Return cell object by id number
+   Cell cell(size_type idx) {
+    return Cell(this,idx);
+   }
+   /** Return cell by id pair
+    * @pre 1 <= i <= n_-1
+    * @pre 1 <= j <= m_-1
+    */
+   Cell cell(size_type i, size_type j) {
+    return Cell(this,(i-1)*(m_-2)+(j-1));
+   }
+  //
+  // CELL ITERATOR
+  //
+  class cell_iterator : private totally_ordered<cell_iterator> {
+  private:
+    StructuredGrid* grid_;
+    size_type idx_;
+  public:
+    // Iterator traits (magic)
+    typedef Cell                      value_type;
+    typedef Cell*                     pointer;
+    typedef Cell&                     reference;
+    typedef std::ptrdiff_t            difference_type;
+    typedef std::forward_iterator_tag iterator_category;
+    // Public constructor
+    cell_iterator(const StructuredGrid* grid, 
+                  size_type idx) :
+      grid_(const_cast<StructuredGrid*>(grid)), idx_(idx) {}
+    // Implement minimal methods
+    Cell operator*() const {
+      return grid_->cell(idx_);
+    }
+    cell_iterator& operator++() { ++idx_; return *this; }
+    bool operator==(const cell_iterator& iter) const {
+      return idx_ == iter.idx_;
+    }
+  };
+  // Return a cell_iterator
+  cell_iterator cell_begin() const {
+    return cell_iterator(this,0);
+  }
+  cell_iterator cell_end() const {
+    return cell_iterator(this,v_.size());
+  }
+
   // 
   // FILE HANDLING METHODS
   // 
