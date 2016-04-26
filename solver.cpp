@@ -33,9 +33,9 @@ int main() {
   // size_type n = 0;          // current iterations
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
-  int Nt = 34; // Total vertical cells
-  int Nbl= 22; // Number of boundary layer cells
-  int Mt = 34; // Total horizontal cells
+  int Nt = 36; // Total vertical cells
+  int Nbl= 23; // Number of boundary layer cells
+  int Mt = 36; // Total horizontal cells
 
   std::vector<coord> X((Nt-1)*(Mt-1));  // Generate grid points for
   make_flat_plate((Nt-1),Nbl,(Mt-1),X); // boundary layer simulation
@@ -52,10 +52,12 @@ int main() {
   StructuredGrid<coord,value> grid(Nt,Mt,V,X);
 
   /* --- RESERVE SPACE FOR RK4 --- */
-
+  value zeros = {0,0,0,0};
+  std::vector<value> v0( (Nt-2)*(Mt-2), zeros );
 
   /* --- RUN SOLVER --- */
   // DEBUG -- single step
+  eflux(grid.cell_begin(),grid.cell_end(),v0);
 
 
   /* --- FILE OUTPUT --- */

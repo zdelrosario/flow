@@ -189,12 +189,28 @@ public:
     size_type i_,j_;
     StructuredGrid* grid_;
   public:
+    /* Invalid Constructor */
+    Value() {}
+    /* Public Constructor */
     Value(size_type i, size_type j, StructuredGrid* grid)
       : i_(i), j_(j), grid_(grid) {}
+    /* Value Assignment Operator */
+    Value operator=(Value val) {
+      i_ = val.i_;
+      j_ = val.j_;
+      grid_ = val.grid_;
+    }
+    /* Forwarding Assignment Operator */
     value_type operator=(value_type val) {
       return grid_->set(i_,j_,val);
     }
+    /* Implicit Conversion Operator */
     operator value_type() const { return grid_->value(i_,j_); }
+    /* Const Subscript Operator */
+    // TODO -- define type as template
+    float operator[](size_type ind) const {
+      return grid_->value(i_,j_)[ind];
+    }
     // DEBUG -- Print value to console
     void print() {
       grid_->print_state(grid_->value(i_,j_));
@@ -240,8 +256,10 @@ public:
     // Private constructor
     Cell(const StructuredGrid* grid, size_type idx)
         : grid_(const_cast<StructuredGrid*>(grid)), idx_(idx) {}
-    // Public Member functions
   public:
+    // Public state vector type
+    typedef value_type CellValue;
+    // Public Member functions
     size_type iy() {
       return floor(idx_/(grid_->m_-2))+1;
     }

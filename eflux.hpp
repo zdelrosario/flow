@@ -5,6 +5,9 @@
 #include <algorithm>  // std::copy(), std::transform()
 #include <iostream>   // debug
 #include <cmath>      // pow()
+#include <array>
+
+using state = std::array<float,4>;
 
 float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
 float K2 = 1;
@@ -16,8 +19,8 @@ float C4 = 2;
 // 
 /* Vector Addition v + w */
 template <typename Value>
-Value add(Value& v,Value& w) {
-  Value u;
+state add(const Value& v, const Value& w) {
+  state u;
   std::transform(v.begin(),v.end(),
                  w.begin(),u.begin(),
                  [](float a, float b){return a+b;});
@@ -25,8 +28,8 @@ Value add(Value& v,Value& w) {
 }
 /* Vector Addition v - w */
 template <typename Value>
-Value sub(Value& v,Value& w) {
-  Value u;
+state sub(const Value& v, const Value& w) {
+  state u;
   std::transform(v.begin(),v.end(),
                  w.begin(),u.begin(),
                  [](float a, float b){return a-b;});
@@ -34,8 +37,8 @@ Value sub(Value& v,Value& w) {
 }
 /* Scalar-Vector Multiplication c*v */
 template <typename Scalar, typename Value>
-Value mul(Scalar c,Value& w) {
-  Value u;
+state mul(Scalar c, const Value& w) {
+  state u;
   std::transform(w.begin(),w.end(),u.begin(),
                  [&c](Scalar a){return c*a;});
   return u;
@@ -48,7 +51,7 @@ Value mul(Scalar c,Value& w) {
  * @brief Calculates the pressure based on a state vector
  */ 
 template <typename Value>
-float pf(Value& w) {
+float pf(const Value& w) {
   return (gam-1)*(w[3]-(pow(w[1],2)+pow(w[2],2))/(2*w[0]));
 }
 
@@ -56,22 +59,22 @@ float pf(Value& w) {
  * @brief Calculates the local speed of sound based on a state vector
  */
 template <typename Value>
-float cf(Value& w) {
+float cf(const Value& w) {
   return sqrt( gam*pf(w)/w[0] );
 }
 
 /** Horizontal Wave Speed
  */
 template <typename Value>
-float wave_x(Value w) {
-  return abs(w[1]/w[0])+cf(w);
+float wave_x(const Value& w) {
+  return std::abs(w[1]/w[0])+cf(w);
 }
 
 /** Horizontal Wave Speed
  */
 template <typename Value>
-float wave_y(Value w) {
-  return abs(w[2]/w[0])+cf(w);
+float wave_y(const Value& w) {
+  return std::abs(w[2]/w[0])+cf(w);
 }
 
 /** Horizontal flux
@@ -80,8 +83,8 @@ float wave_y(Value w) {
  * @param w   Input state vector
  */
 template <typename Value>
-Value f(Value& w) {
-  Value out;
+state f(const Value& w) {
+  state out;
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -99,8 +102,8 @@ Value f(Value& w) {
  * @param out Output flux vector
  */
 template <typename Value>
-Value g(Value& w) {
-  Value out;
+state g(const Value& w) {
+  state out;
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -118,27 +121,29 @@ Value g(Value& w) {
  */
 template <typename Cell>
 float sense_x(Cell c) {
-  return abs( (pf(c.value(1,0))+pf(c.value(-1,0))-2*pf(c.value())) / 
+  return std::abs( (pf(c.value(1,0))+pf(c.value(-1,0))-2*pf(c.value())) / 
               (pf(c.value(1,0))+pf(c.value(-1,0))+2*pf(c.value())) );
 }
 /** Vertical Shock Sensor
  */
 template <typename Cell>
 float sense_y(Cell c) {
-  return abs( (pf(c.value(0,1))+pf(c.value(0,-1))-2*pf(c.value())) / 
+  return std::abs( (pf(c.value(0,1))+pf(c.value(0,-1))-2*pf(c.value())) / 
               (pf(c.value(0,1))+pf(c.value(0,-1))+2*pf(c.value())) );
 }
 /** Horizontal State Difference
  */
-template <typename Cell, typename Value>
-Value dw_dx(Cell c) {
-  return sub(c.value(1,0),c.value());
+template <typename Cell>
+typename Cell::CellValue dw_dx(Cell c) {
+  return sub(typename Cell::CellValue(c.value(1,0)),
+             typename Cell::CellValue(c.value()));
 }
 /** Vertical State Difference
  */
-template <typename Cell, typename Value>
-Value dw_dy(Cell c) {
-  return sub(c.value(0,1),c.value());
+template <typename Cell>
+typename Cell::CellValue dw_dy(Cell c) {
+  return sub(typename Cell::CellValue(c.value(0,1)),
+             typename Cell::CellValue(c.value()));
 }
 
 // 
@@ -172,10 +177,10 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     auto c = *cell_begin;
     /* --- COMPUTE +1/2 BOUNDARIES --- */
     // Compute coefficients
-    Sx = max(sense_x(c),sense_x(c.neighbor(1,0)));
-    Sy = max(sense_y(c),sense_y(c.neighbor(0,1)));
-    Rx = max(wave_x(c.value()),wave_x(c.value(1,0)));
-    Ry = max(wave_y(c.value()),wave_y(c.value(0,1)));
+    Sx = std::max(sense_x(c),sense_x(c.neighbor(1,0)));
+    Sy = std::max(sense_y(c),sense_y(c.neighbor(0,1)));
+    Rx = std::max(wave_x(c.value()),wave_x(c.value(1,0)));
+    Ry = std::max(wave_y(c.value()),wave_y(c.value(0,1)));
     e2 = K2*Sx*Rx;
     e4 = std::max(float(0.),K4*Rx-C4*e2);
     d2 = K2*Sy*Ry;
@@ -186,16 +191,16 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     temp = sub(add(dw_dy(c.neighbor(0,1)),dw_dy(c.neighbor(0,-1))),mul(2,dw_dy(c)));
     e = sub(mul(d2,dw_dy(c)),mul(d4,temp));
     // Compute fluxes
-    h = sub(mul(0.5,add(f(c.value(1,0),f(c.value())))),d);
-    k = sub(mul(0.5,add(g(c.value(1,0),g(c.value())))),e);
+    h = sub(mul( 0.5, add( f(c.value(1,0)), f(c.value()) ) ),d);
+    k = sub(mul( 0.5, add( g(c.value(0,1)), g(c.value()) ) ),e);
     Fx= h;
     Fy= k;
     /* --- COMPUTE -1/2 BOUNDARIES --- */
     // Compute coefficients
-    Sx = max(sense_x(c),sense_x(c.neighbor(-1,0)));
-    Sy = max(sense_y(c),sense_y(c.neighbor(0,-1)));
-    Rx = max(wave_x(c.value()),wave_x(c.value(-1,0)));
-    Ry = max(wave_y(c.value()),wave_y(c.value(0,-1)));
+    Sx = std::max(sense_x(c),sense_x(c.neighbor(-1,0)));
+    Sy = std::max(sense_y(c),sense_y(c.neighbor(0,-1)));
+    Rx = std::max(wave_x(c.value()),wave_x(c.value(-1,0)));
+    Ry = std::max(wave_y(c.value()),wave_y(c.value(0,-1)));
     e2 = K2*Sx*Rx;
     e4 = std::max(float(0.),K4*Rx-C4*e2);
     d2 = K2*Sy*Ry;
@@ -206,13 +211,13 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     temp = sub(add(dw_dy(c),dw_dy(c.neighbor(0,-2))),mul(2,dw_dy(c.neighbor(0,-1))));
     e = sub(mul(d2,dw_dy(c.neighbor(0,-1))),mul(d4,temp));
     // Compute fluxes
-    h = sub(mul(0.5,add(f(c.value(1,0),f(c.value())))),d);
-    k = sub(mul(0.5,add(g(c.value(1,0),g(c.value())))),e);
+    h = sub(mul( 0.5, add( f(c.value(-1,0)), f(c.value()) ) ),d);
+    k = sub(mul( 0.5, add( g(c.value(0,-1)), g(c.value()) ) ),e);
     Fx= sub(Fx,h);
     Fy= sub(Fy,k);
     // Scale the fluxes
-    Fx= mult(1/c.dx,Fx);
-    Fy= mult(1/c.dy,Fy);
+    Fx= mul(1/c.dx(),Fx);
+    Fy= mul(1/c.dy(),Fy);
     // Write the result
     W[c.idx()] = add(Fx,Fy);
   }
