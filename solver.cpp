@@ -35,7 +35,7 @@ int main() {
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
-  int Mt = 36; // Total horizontal cells
+  int Mt = 38; // Total horizontal cells
 
   std::vector<coord> X((Nt-1)*(Mt-1));  // Generate grid points for
   make_flat_plate((Nt-1),Nbl,(Mt-1),X); // boundary layer simulation
@@ -61,8 +61,8 @@ int main() {
 
 
   /* --- FILE OUTPUT --- */
-  grid.write_grid("grid.dat");      // grid points
-  grid.write_values("values.dat");  // cell values
+  grid.write_grid("solution.grid.dat");      // grid points
+  grid.write_values("solution.val.dat");  // cell values
 
   return 0;
 }

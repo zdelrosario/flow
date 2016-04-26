@@ -125,7 +125,6 @@ private:
     // f_out.precision(5);
     // Write out elements
     for (auto it=v.begin(); it!=v.end(); ++it) {
-      // f_out << (*it)[0] << "," << (*it)[1] << std::endl;
       for (auto jt=it->begin(); (jt+1)!=it->end(); ++jt)
         f_out << (*jt) << ",";
       f_out << (*it).back() << std::endl;
@@ -388,7 +387,15 @@ public:
   }
   /* Writes the current cell values to output */
   void write_grid(std::string outputfile) {
-    writeout(outputfile, x_);
+
+    std::ofstream f_out(outputfile.c_str());
+    f_out << (n_-1) << "," << (m_-1) << std::endl;
+    // Write out elements
+    for (auto it=x_.begin(); it!=x_.end(); ++it) {
+      for (auto jt=it->begin(); (jt+1)!=it->end(); ++jt)
+        f_out << (*jt) << ",";
+      f_out << (*it).back() << std::endl;
+    }
   }
 
   // 
