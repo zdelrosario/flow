@@ -251,7 +251,7 @@ public:
     Value value() {
       return Value(this->iy(),this->jx(),grid_);
     }
-    const size_type idx() {
+    size_type idx() const {
       return idx_;
     }
     // Returns value of cell at relative index
@@ -268,17 +268,28 @@ public:
      */
     X x(size_type n) {
       if (n==1) {
-        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()];
+        return grid_->x_[(this->iy()-1)*(grid_->m_-1)+(this->jx()-1)];
       }
       else if (n==2) {
-        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()+1];
+        return grid_->x_[(this->iy()-1)*(grid_->m_-1)+this->jx()];
       }
       else if (n==3) {
-        return grid_->x_[(this->iy()+1)*(grid_->m_-1)+this->jx()+1];
+        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()];
       }
       else if (n==4) {
-        return grid_->x_[(this->iy()+1)*(grid_->m_-1)+this->jx()];
+        return grid_->x_[this->iy()*(grid_->m_-1)+this->jx()-1];
       }
+      else {
+        assert(0);
+      }
+    }
+    /* Returns average cell width */
+    float dx() {
+      return (this->x(2)[0]+this->x(3)[0]-this->x(1)[0]-this->x(4)[0])/2.0;
+    }
+    /* Returns average cell height */
+    float dy() {
+      return (this->x(1)[1]+this->x(2)[1]-this->x(3)[1]-this->x(4)[1])/2.0;
     }
    };
 
