@@ -1,6 +1,14 @@
 #ifndef GRID // Include guard
 #define GRID
 
+/** Structured Grid code
+ *  TODO:
+ *    - Some method/class names are confusingly similar;
+ *      for example we have both a Value return type, and
+ *      a value() method for the grid. Change to dissimilar
+ *      names!
+ */
+
 #include <vector>     // data handling
 #include <algorithm>  // std::copy
 #include <iostream>   // debug
@@ -22,7 +30,7 @@ public:
   typedef StructuredGrid grid_type;
   typedef Val value_type;
   typedef Flag flag_type;
-  typedef S scalar;
+  typedef S scalar_type;
 private:
   //
   // PRIVATE DATA MEMBERS
@@ -149,8 +157,7 @@ public:
    * @param x Vector of physical cell corner points
    *
    * Boundary conditions are specified by a boolean vector
-   * which specifies the condition on a per-state vector element
-   * basis.
+   * which specifies the condition per- state vector element.
    *    0 = dirichlet
    *    1 = neumann
    * 
@@ -162,7 +169,6 @@ public:
    * @pre (n-2)*(m-2) == v.size(), number of interior cells
    * @pre (n-1)*(m-1) == x.size(), number of cell corner points
    *
-   * TODO -- pass boundary conditions (handle here?)
    * TODO -- pass curvilinear mapping
    */
   StructuredGrid(size_type n, size_type m, 
@@ -172,14 +178,25 @@ public:
                  std::vector<flag_type>& right_b,
                  std::vector<flag_type>& top_b,
                  std::vector<flag_type>& bot_b) {
+    // Copy grid dimensions
     n_ = n; m_ = m;
+    // Copy initial states
     v_.resize(v.size());
     std::copy(v.begin(),v.end(),v_.begin());
+    // Copy grid point values
     x_.resize(x.size());
     std::copy(x.begin(),x.end(),x_.begin());
+    // Copy boundary condition flags
+    left_b_.resize(left_b.size());
+    std::copy(left_b.begin(),left_b.end(),left_b_.begin());
+    right_b_.resize(right_b.size());
+    std::copy(right_b.begin(),right_b.end(),right_b_.begin());
+    top_b_.resize(top_b.size());
+    std::copy(top_b.begin(),top_b.end(),top_b_.begin());
+    bot_b_.resize(bot_b.size());
+    std::copy(bot_b.begin(),bot_b.end(),bot_b_.begin());
 
-    // TODO -- allow for non-Dirichlet BC's
-
+    // Generate boundary values
     left_.resize(n_);
     right_.resize(n_);
     // TODO -- replace loops with striding iterator
@@ -231,7 +248,7 @@ public:
     }
     /* Const Subscript Operator */
     // TODO -- define type as template
-    scalar operator[](size_type ind) const {
+    scalar_type operator[](size_type ind) const {
       return grid_->value(i_,j_)[ind];
     }
     // DEBUG -- Print value to console
@@ -344,11 +361,11 @@ public:
       }
     }
     /* Returns average cell width */
-    scalar dx() {
+    scalar_type dx() {
       return (this->x(2)[0]+this->x(3)[0]-this->x(1)[0]-this->x(4)[0])/2.0;
     }
     /* Returns average cell height */
-    scalar dy() {
+    scalar_type dy() {
       return (this->x(1)[1]+this->x(2)[1]-this->x(3)[1]-this->x(4)[1])/2.0;
     }
    };
