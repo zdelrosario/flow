@@ -7,10 +7,13 @@
 #include <string>
 #include <fstream>
 
-using coord = std::array<float,2>; // Grid coordinates
-using value = std::array<float,4>; // State vector values
+using scalar = float;             // Specify solver precision
 
-typedef StructuredGrid<coord,value>::size_type size_type;
+using coord = std::array<scalar,2>; // Grid coordinates
+using value = std::array<scalar,4>; // State vector values
+using flag  = std::array<bool,4>; // State vector values
+
+typedef StructuredGrid<scalar,coord,value,flag>::size_type size_type;
 
 // DEBUG -- Print an array
 template <typename V>
@@ -28,28 +31,48 @@ void print_array(size_type n, size_type m, V v) {
 
 int main() {
   /* --- SOLVER PARAMETERS --- */
-  // float     h = 1e-3;       // time step
+  // Physical parameters
+  scalar u_inf   = 1;
+  scalar rho_inf = 1;
+  scalar v_inf   = 0;
+  scalar e_inf   = 1;
+  // Time integration parameters
+  // scalar     h = 1e-3;       // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
-
-  /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
+  // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
   int Mt = 38; // Total horizontal cells
 
+  /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   std::vector<coord> X((Nt-1)*(Mt-1));  // Generate grid points for
   make_flat_plate((Nt-1),Nbl,(Mt-1),X); // boundary layer simulation
 
   /* --- SET UP GRID --- */
-  value u_inf = {1,1,0,1};    // Uniform flow condition
-  value u_wall = {1,0,0,1};   // Wall (dirichlet) condition
-
-  std::vector<value> V( (Nt-2)*(Mt-2), u_inf );
-  // Set dirichlet condition on bottom
+  // Flow conditions
+  value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
+  value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
+  // Boundary conditions
+  flag B_wall = {1,0,0,1}; // Dirichlet in momentum, neumann in density and energy
+  flag B_dir  = {0,0,0,0}; // Full dirichlet condition
+  flag B_neu  = {1,1,1,1}; // Full neumann condition
+  // Reserve space for cell values
+  std::vector<value> V( (Nt-2)*(Mt-2), U_inf );
+  // Set dirichlet value on bottom
   for (int j = 0; j<Mt-2; ++j) {
-    V[(Nt-3)*(Mt-2)+j] = u_wall;
+    V[(Nt-3)*(Mt-2)+j] = U_wall;
   }
-  StructuredGrid<coord,value> grid(Nt,Mt,V,X);
+
+  // Specify boundary condition flag vectors
+  std::vector<flag> left_b(Nt,B_dir);   // Dirichlet inlet
+  std::vector<flag> right_b(Nt,B_neu);  // Neumann outlet
+  std::vector<flag> top_b(Mt-2,B_neu);  // Neumann top
+  std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
+
+  // Define grid
+  StructuredGrid<scalar,coord,value,flag> grid(Nt,Mt,V,X,
+                                        left_b,right_b,top_b,bot_b);
 
   /* --- RESERVE SPACE FOR RK4 --- */
   value zeros = {0,0,0,0};
@@ -58,7 +81,6 @@ int main() {
   /* --- RUN SOLVER --- */
   // DEBUG -- single step
   eflux(grid.cell_begin(),grid.cell_end(),v0);
-
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");      // grid points

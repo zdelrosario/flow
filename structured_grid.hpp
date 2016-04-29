@@ -12,7 +12,7 @@
 /** 2-D Structured Grid class
  * @tparam Val Grid value type
  */
-template <typename X, typename Val>
+template <typename S, typename X, typename Val, typename Flag>
 class StructuredGrid {
   //
   // PUBLIC TYPE DEFINITIONS
@@ -21,6 +21,8 @@ public:
   typedef unsigned size_type;
   typedef StructuredGrid grid_type;
   typedef Val value_type;
+  typedef Flag flag_type;
+  typedef S scalar;
 private:
   //
   // PRIVATE DATA MEMBERS
@@ -34,10 +36,15 @@ private:
   std::vector<value_type> right_; // Right boundary, size()==n_
   std::vector<value_type> top_;   // Top boundary, size()==m_-2
   std::vector<value_type> bot_;   // Bot boundary, size()==m_-2
+  // Boundary condition flags
+  std::vector<flag_type> left_b_;  // Left boundary flag, size()==n_
+  std::vector<flag_type> right_b_; // Right boundary flag, size()==n_
+  std::vector<flag_type> top_b_;   // Top boundary flag, size()==m_-2
+  std::vector<flag_type> bot_b_;   // Bot boundary flag, size()==m_-2
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
-  /** Return grid value at index pair
+  /** Return cell value at index pair
    * 
    * @param i Vertical index
    * @param j Horizontal index
@@ -49,7 +56,6 @@ private:
    *         currently assumes Dirichlet
    */
   value_type value(size_type i, size_type j) {
-// std::cout << "grid_value (" << i << "," << j << ")" << std::endl;
     // Left Boundary
     if (j==0) {
       return left_[i];
@@ -71,7 +77,7 @@ private:
       return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
-  /** Set grid value at index pair
+  /** Set cell value at index pair
    * 
    * @param i Vertical index
    * @param j Horizontal index
@@ -141,6 +147,17 @@ public:
    * @param m Number of total horizontal cells
    * @param v Initial conditions of cells
    * @param x Vector of physical cell corner points
+   *
+   * Boundary conditions are specified by a boolean vector
+   * which specifies the condition on a per-state vector element
+   * basis.
+   *    0 = dirichlet
+   *    1 = neumann
+   * 
+   * @param left_b  Left boundary condition
+   * @param right_b Right boundary condition
+   * @param top_b   Top boundary condition
+   * @param bot_b   Bottom boundary condition
    * 
    * @pre (n-2)*(m-2) == v.size(), number of interior cells
    * @pre (n-1)*(m-1) == x.size(), number of cell corner points
@@ -150,7 +167,11 @@ public:
    */
   StructuredGrid(size_type n, size_type m, 
                  std::vector<value_type>& v,
-                 std::vector<X>& x) {
+                 std::vector<X>& x,
+                 std::vector<flag_type>& left_b,
+                 std::vector<flag_type>& right_b,
+                 std::vector<flag_type>& top_b,
+                 std::vector<flag_type>& bot_b) {
     n_ = n; m_ = m;
     v_.resize(v.size());
     std::copy(v.begin(),v.end(),v_.begin());
@@ -210,7 +231,7 @@ public:
     }
     /* Const Subscript Operator */
     // TODO -- define type as template
-    float operator[](size_type ind) const {
+    scalar operator[](size_type ind) const {
       return grid_->value(i_,j_)[ind];
     }
     // DEBUG -- Print value to console
@@ -323,11 +344,11 @@ public:
       }
     }
     /* Returns average cell width */
-    float dx() {
+    scalar dx() {
       return (this->x(2)[0]+this->x(3)[0]-this->x(1)[0]-this->x(4)[0])/2.0;
     }
     /* Returns average cell height */
-    float dy() {
+    scalar dy() {
       return (this->x(1)[1]+this->x(2)[1]-this->x(3)[1]-this->x(4)[1])/2.0;
     }
    };
