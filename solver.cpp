@@ -59,15 +59,16 @@ int main() {
   flag B_dir  = {0,0,0,0}; // Full dirichlet condition
   flag B_neu  = {1,1,1,1}; // Full neumann condition
   // Reserve space for cell values
-  std::vector<value> V( (Nt-2)*(Mt-2), U_inf );
+  std::vector<value> V( Nt*Mt, U_inf );
   // Set dirichlet value on bottom
-  for (int j = 0; j<Mt-2; ++j) {
-    V[(Nt-3)*(Mt-2)+j] = U_wall;
+  for (int j = 1; j<Mt; ++j) {
+    V[(Nt-1)*Mt+j] = U_wall;
   }
 
   // Specify boundary condition flag vectors
   std::vector<flag> left_b(Nt,B_dir);   // Dirichlet inlet
   std::vector<flag> right_b(Nt,B_neu);  // Neumann outlet
+  right_b[Nt-1] = B_wall;               // plate extends to right end of domain
   std::vector<flag> top_b(Mt-2,B_neu);  // Neumann top
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
 
@@ -77,13 +78,14 @@ int main() {
 
   // DEBUG -- Check bc handling
   auto val = grid.access();
-  val(33,1).print(); std::cout<<std::endl;
+  val(35,37).print(); std::cout<<std::endl;
 
   /* --- RESERVE SPACE FOR RK4 --- */
   value zeros = {0,0,0,0};
-  std::vector<value> v0( (Nt-2)*(Mt-2), zeros );
+  std::vector<value> v0( (Nt-2)*(Mt-2) );
 
   /* --- RUN SOLVER --- */
+  std::fill(v0.begin(),v0.end(),zeros);
   // DEBUG -- single step
   // eflux(grid.cell_begin(),grid.cell_end(),v0);
 

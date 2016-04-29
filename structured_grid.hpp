@@ -95,13 +95,27 @@ private:
     assert(j<m_);
     // Left Boundary
     if (j==0) {
-      // return left_[i];
-      return bc_helper(left_b_[i],left_[i],value(i,j+1));
+      // Top corner
+      if (i==0)
+        return bc_helper(left_b_[i],left_[i],value(i+1,j+1));
+      // Bottom corner
+      else if (i==n_-1)
+        return bc_helper(left_b_[i],left_[i],value(i-1,j+1));
+      // Side wall
+      else
+        return bc_helper(left_b_[i],left_[i],value(i,j+1));
     }
     // Right Boundary
     else if (j==m_-1) {
-      // return right_[i];
-      return bc_helper(right_b_[i],right_[i],value(i,j-1));
+      // Top corner
+      if (i==0)
+        return bc_helper(left_b_[i],left_[i],value(i+1,j-1));
+      // Bottom corner
+      else if (i==n_-1)
+        return bc_helper(left_b_[i],left_[i],value(i-1,j-1));
+      // Side wall
+      else
+        return bc_helper(right_b_[i],right_[i],value(i,j-1));
     }
     // Top Boundary
     else if (i==0) {
@@ -202,7 +216,7 @@ public:
    * @param top_b   Top boundary condition
    * @param bot_b   Bottom boundary condition
    * 
-   * @pre (n-2)*(m-2) == v.size(), number of interior cells
+   * @pre (n)*(m) == v.size(), number of total cells
    * @pre (n-1)*(m-1) == x.size(), number of cell corner points
    *
    * TODO -- pass curvilinear mapping
@@ -216,9 +230,13 @@ public:
                  std::vector<flag_type>& bot_b) {
     // Copy grid dimensions
     n_ = n; m_ = m;
-    // Copy initial states
-    v_.resize(v.size());
-    std::copy(v.begin(),v.end(),v_.begin());
+    // Copy interior cell values
+    v_.resize((n_-2)*(m_*2));
+    for (size_type i=0; i<n_-2; ++i) {
+      for (size_type j=0; j<m_-2; ++j) {
+        v_[i*(m_-2)+j] = v[(i+1)*m_+(j+1)];
+      }
+    }
     // Copy grid point values
     x_.resize(x.size());
     std::copy(x.begin(),x.end(),x_.begin());
@@ -236,20 +254,18 @@ public:
     left_.resize(n_);
     right_.resize(n_);
     // TODO -- replace loops with striding iterator
-    for (size_type i=1; i<(n_-1); ++i) {
-      left_[i]  = v_[(i-1)*(m_-2)+0];
-      right_[i] = v_[(i-1)*(m_-2)+m_-3];
+    for (size_type i=0; i<n_; ++i) {
+      left_[i]  = v[i*m_];
+      right_[i] = v[i*m_+m_-1];
     }
-    // DEBUG -- repeat top and bottom elements
-    left_[0] = left_[1]; left_[n_-1] = left_[n_-2];
-    right_[0] = right_[1]; right_[n_-1] = right_[n_-2];
 
     top_.resize(m_-2);
     bot_.resize(m_-2);
-    // Iterate horizontally over 2D grid
+    // Iterate horizontally over top and bottom,
+    // skip the left and right edges
     for (size_type i=0; i+2<m_; ++i) {
-      top_[i] = *(v_.begin()+i);
-      bot_[i] = *(v_.end()-(m_-2)+i);
+      top_[i] = *(v.begin()+i+1);
+      bot_[i] = *(v.end()-m_+i+1);
     }
   }
   // 
