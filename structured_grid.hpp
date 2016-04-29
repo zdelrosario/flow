@@ -64,8 +64,19 @@ private:
    * @return State vector obeying boundary conditions
    */
   value_type bc_helper(const flag_type& f, const value_type& v_d, const value_type& v_n) {
-    // 
+    // Reserve some space
+    value_type res;
+    // Choose element based on flag value
+    for (size_type i=0; i!=f.size(); ++i) {
+      if (f[i] == 0)      // 0 == dirichlet
+        res[i] = v_d[i];
+      else                // 1 == neumann
+        res[i] = v_n[i];
+    }
+    // Return the result
+    return res;
   }
+
   /** Return cell value at index pair
    * 
    * @param i Vertical index
@@ -78,21 +89,29 @@ private:
    *         currently assumes Dirichlet
    */
   value_type value(size_type i, size_type j) {
+
+    // DEBUG bound assertions
+    assert(i<n_);
+    assert(j<m_);
     // Left Boundary
     if (j==0) {
-      return left_[i];
+      // return left_[i];
+      return bc_helper(left_b_[i],left_[i],value(i,j+1));
     }
     // Right Boundary
     else if (j==m_-1) {
-      return right_[i];
+      // return right_[i];
+      return bc_helper(right_b_[i],right_[i],value(i,j-1));
     }
     // Top Boundary
     else if (i==0) {
-      return top_[j-1];
+      // return top_[j-1];
+      return bc_helper(top_b_[i],top_[i],value(i+1,j));
     }
     // Bot Boundary
     else if (i==n_-1) {
-      return bot_[j-1];
+      // return bot_[j-1];
+      return bc_helper(bot_b_[i],bot_[i],value(i-1,j));
     }
     // Interior point
     else {

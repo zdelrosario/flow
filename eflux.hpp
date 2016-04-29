@@ -175,8 +175,8 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     // Dereference cell
     auto c = *cell_begin;
     // DEBUG -- Print cell index
-std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
-std::cout << std::endl;
+// std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
+// std::cout << std::endl;
     /* --- COMPUTE +1/2 BOUNDARIES --- */
     // Compute coefficients
     Sx = std::max(sense_x(c),sense_x(c.neighbor(1,0)));

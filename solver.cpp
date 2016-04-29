@@ -52,7 +52,8 @@ int main() {
   /* --- SET UP GRID --- */
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
-  value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
+  // value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
+  value U_wall = {2*rho_inf,0,0,2*rho_inf*e_inf};   // Wall state
   // Boundary conditions
   flag B_wall = {1,0,0,1}; // Dirichlet in momentum, neumann in density and energy
   flag B_dir  = {0,0,0,0}; // Full dirichlet condition
@@ -74,13 +75,17 @@ int main() {
   StructuredGrid<scalar,coord,value,flag> grid(Nt,Mt,V,X,
                                         left_b,right_b,top_b,bot_b);
 
+  // DEBUG -- Check bc handling
+  auto val = grid.access();
+  val(33,1).print(); std::cout<<std::endl;
+
   /* --- RESERVE SPACE FOR RK4 --- */
   value zeros = {0,0,0,0};
   std::vector<value> v0( (Nt-2)*(Mt-2), zeros );
 
   /* --- RUN SOLVER --- */
   // DEBUG -- single step
-  eflux(grid.cell_begin(),grid.cell_end(),v0);
+  // eflux(grid.cell_begin(),grid.cell_end(),v0);
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");      // grid points
