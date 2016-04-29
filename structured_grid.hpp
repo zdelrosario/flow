@@ -52,12 +52,26 @@ private:
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
+  /** Boundary condition helper function
+   * @brief Switches between neumann and dirichlet boundary
+   *        condition based on provided flag. Writes to
+   *        provided output vector.
+   *
+   * @param f   Boundary condition vector flag
+   * @param v_d Dirichlet value
+   * @param v_n Neumann value
+   * 
+   * @return State vector obeying boundary conditions
+   */
+  value_type bc_helper(const flag_type& f, const value_type& v_d, const value_type& v_n) {
+    // 
+  }
   /** Return cell value at index pair
    * 
    * @param i Vertical index
    * @param j Horizontal index
    * 
-   * @pre 0<=i<=n_-1
+   * @pre 0<=i<=n_-1, interior points are strict inequality
    * @pre 0<=j<=m_-1
    * 
    * TODO -- Handle different boundary conditions,
@@ -86,6 +100,9 @@ private:
     }
   }
   /** Set cell value at index pair
+   * 
+   * Note that this function ignores any 
+   * sort of boundary conditions.
    * 
    * @param i Vertical index
    * @param j Horizontal index
