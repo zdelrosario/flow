@@ -7,6 +7,9 @@
 #include <algorithm>  // std::copy(), std::transform()
 #include <iostream>   // debug
 #include <cmath>      // pow()
+#include <valarray>   // std::valarray, std::begin, std::end
+
+using size_type = unsigned;
 
 float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
 float K2 = 1;
@@ -19,26 +22,26 @@ float C4 = 2;
 /* Vector Addition v + w */
 template <typename Value>
 Value add(const Value& v, const Value& w) {
-  Value u;
-  std::transform(v.begin(),v.end(),
-                 w.begin(),u.begin(),
+  Value u; u.resize(v.size());
+  std::transform(std::begin(v),std::end(v),
+                 std::begin(w),std::begin(u),
                  [](float a, float b){return a+b;});
   return u;
 }
 /* Vector Addition v - w */
 template <typename Value>
 Value sub(const Value& v, const Value& w) {
-  Value u;
-  std::transform(v.begin(),v.end(),
-                 w.begin(),u.begin(),
+  Value u; u.resize(v.size());
+  std::transform(std::begin(v),std::end(v),
+                 std::begin(w),std::begin(u),
                  [](float a, float b){return a-b;});
   return u;
 }
 /* Scalar-Vector Multiplication c*v */
 template <typename Scalar, typename Value>
 Value mul(Scalar c, const Value& w) {
-  Value u;
-  std::transform(w.begin(),w.end(),u.begin(),
+  Value u; u.resize(w.size());
+  std::transform(std::begin(w),std::end(w),std::begin(u),
                  [&c](Scalar a){return c*a;});
   return u;
 }
@@ -83,7 +86,7 @@ float wave_y(const Value& w) {
  */
 template <typename Value>
 Value f(const Value& w) {
-  Value out;
+  Value out; out.resize(w.size());
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -102,7 +105,7 @@ Value f(const Value& w) {
  */
 template <typename Value>
 Value g(const Value& w) {
-  Value out;
+  Value out; out.resize(w.size());
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -166,8 +169,9 @@ typename Cell::CellValue dw_dy(Cell c) {
 template <typename CellIter, typename Value>
 void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
   /* --- SETUP --- */
+  size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
-  Value h,d,Fx, k,e,Fy, temp;
+  Value h(cs),d(cs),Fx(cs), k(cs),e(cs),Fy(cs), temp(cs);
   float e2,e4,d2,d4,Sx,Sy,Rx,Ry;
 
   /* --- ITERATE OVER CELLS --- */
