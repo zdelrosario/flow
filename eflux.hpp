@@ -1,19 +1,12 @@
 #ifndef EFLUX // Include guard
 #define EFLUX
 /** Euler Flux Calculator
- * 
- * Currently throws a segfault -- check that we're
- * not accessing out-of-bounds cells in the 4th order
- * difference term
  */
 
 #include <vector>     // data handling
 #include <algorithm>  // std::copy(), std::transform()
 #include <iostream>   // debug
 #include <cmath>      // pow()
-#include <array>
-
-using state = std::array<float,4>;
 
 float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
 float K2 = 1;
@@ -25,8 +18,8 @@ float C4 = 2;
 // 
 /* Vector Addition v + w */
 template <typename Value>
-state add(const Value& v, const Value& w) {
-  state u;
+Value add(const Value& v, const Value& w) {
+  Value u;
   std::transform(v.begin(),v.end(),
                  w.begin(),u.begin(),
                  [](float a, float b){return a+b;});
@@ -34,8 +27,8 @@ state add(const Value& v, const Value& w) {
 }
 /* Vector Addition v - w */
 template <typename Value>
-state sub(const Value& v, const Value& w) {
-  state u;
+Value sub(const Value& v, const Value& w) {
+  Value u;
   std::transform(v.begin(),v.end(),
                  w.begin(),u.begin(),
                  [](float a, float b){return a-b;});
@@ -43,8 +36,8 @@ state sub(const Value& v, const Value& w) {
 }
 /* Scalar-Vector Multiplication c*v */
 template <typename Scalar, typename Value>
-state mul(Scalar c, const Value& w) {
-  state u;
+Value mul(Scalar c, const Value& w) {
+  Value u;
   std::transform(w.begin(),w.end(),u.begin(),
                  [&c](Scalar a){return c*a;});
   return u;
@@ -89,8 +82,8 @@ float wave_y(const Value& w) {
  * @param w   Input state vector
  */
 template <typename Value>
-state f(const Value& w) {
-  state out;
+Value f(const Value& w) {
+  Value out;
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -108,8 +101,8 @@ state f(const Value& w) {
  * @param out Output flux vector
  */
 template <typename Value>
-state g(const Value& w) {
-  state out;
+Value g(const Value& w) {
+  Value out;
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
@@ -200,8 +193,8 @@ std::cout << std::endl;
     temp = sub(add(dw_dy(c.neighbor(0,1)),dw_dy(c.neighbor(0,-1))),mul(2,dw_dy(c)));
     e = sub(mul(d2,dw_dy(c)),mul(d4,temp));
     // Compute fluxes
-    h = sub(mul( 0.5, add( f(c.value(1,0)), f(c.value()) ) ),d);
-    k = sub(mul( 0.5, add( g(c.value(0,1)), g(c.value()) ) ),e);
+    h = sub(mul( 0.5, add( f(Value(c.value(1,0))), f(Value(c.value())) ) ),d);
+    k = sub(mul( 0.5, add( g(Value(c.value(0,1))), g(Value(c.value())) ) ),e);
     Fx= h;
     Fy= k;
     /* --- COMPUTE -1/2 BOUNDARIES --- */
@@ -220,8 +213,8 @@ std::cout << std::endl;
     temp = sub(add(dw_dy(c),dw_dy(c.neighbor(0,-2))),mul(2,dw_dy(c.neighbor(0,-1))));
     e = sub(mul(d2,dw_dy(c.neighbor(0,-1))),mul(d4,temp));
     // Compute fluxes
-    h = sub(mul( 0.5, add( f(c.value(-1,0)), f(c.value()) ) ),d);
-    k = sub(mul( 0.5, add( g(c.value(0,-1)), g(c.value()) ) ),e);
+    h = sub(mul( 0.5, add( f(Value(c.value(-1,0))), f(Value(c.value())) ) ),d);
+    k = sub(mul( 0.5, add( g(Value(c.value(0,-1))), g(Value(c.value())) ) ),e);
     Fx= sub(Fx,h);
     Fy= sub(Fy,k);
     // Scale the fluxes
