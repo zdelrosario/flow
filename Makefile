@@ -4,15 +4,16 @@
 #
 
 # Executables to build
-EXEC += test
+# EXEC += test
+EXEC += solver
 
 # Get the shell name to determine the OS
 UNAME := $(shell uname)
 
 # Define the C++ compiler to use
 ifeq ($(UNAME), Linux)
-  # CXX := clang++-3.5
-  CXX := g++
+  CXX := clang++-3.5
+  # CXX := g++
 endif
 ifeq ($(UNAME), Darwin)
   CXX := clang++
@@ -46,10 +47,10 @@ LDFLAGS +=
 # Define any libraries to link into executable
 #   To link in libraries (libXXX.so or libXXX.a) use -lXXX
 ifeq ($(UNAME), Linux)
-  LDLIBS += -lSDL -lGL -lGLU
+  # LDLIBS += -lSDL -lGL -lGLU
 endif
 ifeq ($(UNAME), Darwin)
-  LDLIBS += -L/usr/local/lib -lSDLmain -lSDL -Wl,-framework,Cocoa,-framework,OpenGL
+  # LDLIBS += -L/usr/local/lib -lSDLmain -lSDL -Wl,-framework,Cocoa,-framework,OpenGL
 endif
 
 ##################
