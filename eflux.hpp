@@ -17,36 +17,6 @@ float K4 = 1/32;
 float C4 = 2;
 
 // 
-// VECTOR OPERATIONS
-// 
-/* Vector Addition v + w */
-template <typename Value>
-Value add(const Value& v, const Value& w) {
-  Value u; u.resize(v.size());
-  std::transform(std::begin(v),std::end(v),
-                 std::begin(w),std::begin(u),
-                 [](float a, float b){return a+b;});
-  return u;
-}
-/* Vector Addition v - w */
-template <typename Value>
-Value sub(const Value& v, const Value& w) {
-  Value u; u.resize(v.size());
-  std::transform(std::begin(v),std::end(v),
-                 std::begin(w),std::begin(u),
-                 [](float a, float b){return a-b;});
-  return u;
-}
-/* Scalar-Vector Multiplication c*v */
-template <typename Scalar, typename Value>
-Value mul(Scalar c, const Value& w) {
-  Value u; u.resize(w.size());
-  std::transform(std::begin(w),std::end(w),std::begin(u),
-                 [&c](Scalar a){return c*a;});
-  return u;
-}
-
-// 
 // VECTOR HELPER FUNCTIONS
 // 
 /** Pressure
@@ -137,15 +107,13 @@ float sense_y(Cell c) {
  */
 template <typename Cell>
 typename Cell::CellValue dw_dx(Cell c) {
-  return sub(typename Cell::CellValue(c.value(1,0)),
-             typename Cell::CellValue(c.value()));
+  return typename Cell::CellValue(c.value(1,0)) - typename Cell::CellValue(c.value());
 }
 /** Vertical State Difference
  */
 template <typename Cell>
 typename Cell::CellValue dw_dy(Cell c) {
-  return sub(typename Cell::CellValue(c.value(0,1)),
-             typename Cell::CellValue(c.value()));
+  return typename Cell::CellValue(c.value(0,1)) - typename Cell::CellValue(c.value());
 }
 
 // 
@@ -218,13 +186,13 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     h = scalar(0.5)*( f(Value(c.value(-1,0))) + f(Value(c.value())) ) - d;
     k = scalar(0.5)*( g(Value(c.value(0,-1))) + g(Value(c.value())) ) - e;
 
-    Fx= sub(Fx,h);
-    Fy= sub(Fy,k);
+    Fx= Fx-h;
+    Fy= Fy-k;
     // Scale the fluxes
-    Fx= mul(1/c.dx(),Fx);
-    Fy= mul(1/c.dy(),Fy);
+    Fx= scalar(1/c.dx())*Fx;
+    Fy= scalar(1/c.dy())*Fy;
     // Add the result to the writeout vector
-    W[c.idx()] = add(add(Fx,Fy),W[c.idx()]);
+    W[c.idx()] = Fx+Fy+W[c.idx()];
   }
   return;
 }
