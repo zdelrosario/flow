@@ -231,7 +231,7 @@ public:
     // Copy grid dimensions
     n_ = n; m_ = m;
     // Copy interior cell values
-    v_.resize((n_-2)*(m_*2));
+    v_.resize((n_-2)*(m_-2));
     for (size_type i=0; i<n_-2; ++i) {
       for (size_type j=0; j<m_-2; ++j) {
         v_[i*(m_-2)+j] = v[(i+1)*m_+(j+1)];
