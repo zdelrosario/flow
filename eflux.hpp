@@ -220,8 +220,8 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     // Scale the fluxes
     Fx= mul(1/c.dx(),Fx);
     Fy= mul(1/c.dy(),Fy);
-    // Write the result
-    W[c.idx()] = add(Fx,Fy);
+    // Add the result to the writeout vector
+    W[c.idx()] = add(add(Fx,Fy),W[c.idx()]);
   }
   return;
 }
