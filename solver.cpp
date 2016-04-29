@@ -37,7 +37,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 1;
   // Time integration parameters
-  // scalar     h = 1e-3;       // time step
+  // scalar     h = 1e-3;      // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
   // Discretization parameters
@@ -52,8 +52,7 @@ int main() {
   /* --- SET UP GRID --- */
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
-  // value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
-  value U_wall = {2*rho_inf,0,0,2*rho_inf*e_inf};   // Wall state
+  value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
   // Boundary conditions
   flag B_wall = {1,0,0,1}; // Dirichlet in momentum, neumann in density and energy
   flag B_dir  = {0,0,0,0}; // Full dirichlet condition
@@ -76,22 +75,25 @@ int main() {
   StructuredGrid<scalar,coord,value,flag> grid(Nt,Mt,V,X,
                                         left_b,right_b,top_b,bot_b);
 
-  // DEBUG -- Check bc handling
-  auto val = grid.access();
-  val(35,37).print(); std::cout<<std::endl;
-
   /* --- RESERVE SPACE FOR RK4 --- */
   value zeros = {0,0,0,0};
-  std::vector<value> v0( (Nt-2)*(Mt-2) );
+  std::vector<value> k1( (Nt-2)*(Mt-2) );
+  std::vector<value> k2( (Nt-2)*(Mt-2) );
+  std::vector<value> k3( (Nt-2)*(Mt-2) );
+  std::vector<value> k4( (Nt-2)*(Mt-2) );
 
   /* --- RUN SOLVER --- */
-  std::fill(v0.begin(),v0.end(),zeros);
+  std::fill(k1.begin(),k1.end(),zeros);
+  std::fill(k2.begin(),k2.end(),zeros);
+  std::fill(k3.begin(),k3.end(),zeros);
+  std::fill(k4.begin(),k4.end(),zeros);
   // DEBUG -- single step
-  // eflux(grid.cell_begin(),grid.cell_end(),v0);
+  eflux(grid.cell_begin(),grid.cell_end(),k1);
+  // nsflux(grid.cell_begin(),grid.cell_end(),k1);
 
   /* --- FILE OUTPUT --- */
-  grid.write_grid("solution.grid.dat");      // grid points
-  grid.write_values("solution.val.dat");  // cell values
+  grid.write_grid("solution.grid.dat");  // grid points
+  grid.write_values("solution.val.dat"); // cell values
 
   return 0;
 }
