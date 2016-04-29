@@ -169,6 +169,7 @@ typename Cell::CellValue dw_dy(Cell c) {
 template <typename CellIter, typename Value>
 void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
   /* --- SETUP --- */
+  using scalar = typename Value::value_type;
   size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
   Value h(cs),d(cs),Fx(cs), k(cs),e(cs),Fy(cs), temp(cs);
@@ -187,18 +188,17 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     Sy = std::max(sense_y(c),sense_y(c.neighbor(0,1)));
     Rx = std::max(wave_x(c.value()),wave_x(c.value(1,0)));
     Ry = std::max(wave_y(c.value()),wave_y(c.value(0,1)));
-    e2 = K2*Sx*Rx;
-    e4 = std::max(float(0.),K4*Rx-C4*e2);
-    d2 = K2*Sy*Ry;
-    d4 = std::max(float(0.),K4*Ry-C4*d2);
+    e2 = K2*Sx*Rx;  e4 = std::max(float(0.),K4*Rx-C4*e2);
+    d2 = K2*Sy*Ry;  d4 = std::max(float(0.),K4*Ry-C4*d2);
     // Compute vector differences
-    temp = sub(add(dw_dx(c.neighbor(1,0)),dw_dx(c.neighbor(-1,0))),mul(2,dw_dx(c)));
-    d = sub(mul(e2,dw_dx(c)),mul(e4,temp));
-    temp = sub(add(dw_dy(c.neighbor(0,1)),dw_dy(c.neighbor(0,-1))),mul(2,dw_dy(c)));
-    e = sub(mul(d2,dw_dy(c)),mul(d4,temp));
+    temp = dw_dx(c.neighbor(1,0))+dw_dx(c.neighbor(-1,0))-scalar(2)*dw_dx(c);
+    d = e2*dw_dx(c) - e4*temp;
+    temp = dw_dy(c.neighbor(0,1))+dw_dy(c.neighbor(0,-1))-scalar(2)*dw_dy(c);
+    e = d2*dw_dy(c) - d4*temp;
     // Compute fluxes
-    h = sub(mul( 0.5, add( f(Value(c.value(1,0))), f(Value(c.value())) ) ),d);
-    k = sub(mul( 0.5, add( g(Value(c.value(0,1))), g(Value(c.value())) ) ),e);
+    h = scalar(0.5)*( f(Value(c.value(1,0))) + f(Value(c.value())) ) - d;
+    k = scalar(0.5)*( g(Value(c.value(0,1))) + g(Value(c.value())) ) - e;
+
     Fx= h;
     Fy= k;
     /* --- COMPUTE -1/2 BOUNDARIES --- */
@@ -207,18 +207,17 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     Sy = std::max(sense_y(c),sense_y(c.neighbor(0,-1)));
     Rx = std::max(wave_x(c.value()),wave_x(c.value(-1,0)));
     Ry = std::max(wave_y(c.value()),wave_y(c.value(0,-1)));
-    e2 = K2*Sx*Rx;
-    e4 = std::max(float(0.),K4*Rx-C4*e2);
-    d2 = K2*Sy*Ry;
-    d4 = std::max(float(0.),K4*Ry-C4*d2);
+    e2 = K2*Sx*Rx;  e4 = std::max(float(0.),K4*Rx-C4*e2);
+    d2 = K2*Sy*Ry;  d4 = std::max(float(0.),K4*Ry-C4*d2);
     // Compute vector differences
-    temp = sub(add(dw_dx(c),dw_dx(c.neighbor(-2,0))),mul(2,dw_dx(c.neighbor(-1,0))));
-    d = sub(mul(e2,dw_dx(c.neighbor(-1,0))),mul(e4,temp));
-    temp = sub(add(dw_dy(c),dw_dy(c.neighbor(0,-2))),mul(2,dw_dy(c.neighbor(0,-1))));
-    e = sub(mul(d2,dw_dy(c.neighbor(0,-1))),mul(d4,temp));
+    temp = dw_dx(c)+dw_dx(c.neighbor(-2,0))-scalar(2)*dw_dx(c.neighbor(-1,0));
+    d = e2*dw_dx(c.neighbor(-1,0)) - e4*temp;
+    temp = dw_dy(c)+dw_dy(c.neighbor(0,-2))-scalar(2)*dw_dy(c.neighbor(0,-1));
+    e = d2*dw_dy(c.neighbor(0,-1)) - d4*temp;
     // Compute fluxes
-    h = sub(mul( 0.5, add( f(Value(c.value(-1,0))), f(Value(c.value())) ) ),d);
-    k = sub(mul( 0.5, add( g(Value(c.value(0,-1))), g(Value(c.value())) ) ),e);
+    h = scalar(0.5)*( f(Value(c.value(-1,0))) + f(Value(c.value())) ) - d;
+    k = scalar(0.5)*( g(Value(c.value(0,-1))) + g(Value(c.value())) ) - e;
+
     Fx= sub(Fx,h);
     Fy= sub(Fy,k);
     // Scale the fluxes
