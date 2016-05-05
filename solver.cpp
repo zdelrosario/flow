@@ -4,13 +4,15 @@
 
 #include <iostream>
 #include <array>
+#include <valarray>   // std::valarray, std::begin, std::end
 #include <string>
 #include <fstream>
 
 using scalar = float;             // Specify solver precision
 
 using coord = std::array<scalar,2>; // Grid coordinates
-using value = std::array<scalar,4>; // State vector values
+// using value = std::array<scalar,4>; // State vector values
+using value = std::valarray<scalar>;
 using flag  = std::array<bool,4>; // State vector values
 
 typedef StructuredGrid<scalar,coord,value,flag>::size_type size_type;

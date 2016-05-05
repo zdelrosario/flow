@@ -10,6 +10,7 @@
  */
 
 #include <vector>     // data handling
+#include <valarray>   // std::valarray, std::begin, std::end
 #include <algorithm>  // std::copy
 #include <iostream>   // debug
 #include <cmath>      // floor
@@ -65,7 +66,7 @@ private:
    */
   value_type bc_helper(const flag_type& f, const value_type& v_d, const value_type& v_n) {
     // Reserve some space
-    value_type res;
+    value_type res; res.resize(f.size());
     // Choose element based on flag value
     for (size_type i=0; i!=f.size(); ++i) {
       if (f[i] == 0)      // 0 == dirichlet
@@ -188,10 +189,10 @@ private:
     std::ofstream f_out(outputfile.c_str());
     // f_out.precision(5);
     // Write out elements
-    for (auto it=v.begin(); it!=v.end(); ++it) {
-      for (auto jt=it->begin(); (jt+1)!=it->end(); ++jt)
+    for (auto it=std::begin(v); it!=std::end(v); ++it) {
+      for (auto jt=std::begin(*it); (jt+1)!=std::end(*it); ++jt)
         f_out << (*jt) << ",";
-      f_out << (*it).back() << std::endl;
+      f_out << (*it)[it->size()-1] << std::endl;
     }
   }
 public:
@@ -299,9 +300,12 @@ public:
       return grid_->value(i_,j_); 
     }
     /* Const Subscript Operator */
-    // TODO -- define type as template
     scalar_type operator[](size_type ind) const {
       return grid_->value(i_,j_)[ind];
+    }
+    /* Size */
+    size_type size() {
+      return grid_->value(i_,j_).size();
     }
     // DEBUG -- Print value to console
     void print() {
