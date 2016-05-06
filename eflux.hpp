@@ -134,9 +134,11 @@ typename Cell::CellValue dw_dy(Cell c) {
  * 
  * @post w contains the euler fluxes for each cell
  */
-template <typename CellIter, typename Value>
-void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
+// template <typename CellIter, typename Value>
+template <typename CellIter>
+void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
   /* --- SETUP --- */
+  using Value = typename CellIter::Value;
   using scalar = typename Value::value_type;
   size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
@@ -147,6 +149,7 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
   for ( ; cell_begin!=cell_end; ++cell_begin) {
     // Dereference cell
     auto c = *cell_begin;
+    auto z = *stage_begin;
     // DEBUG -- Print cell index
 // std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
 // std::cout << std::endl;
@@ -192,7 +195,10 @@ void eflux(CellIter cell_begin, CellIter cell_end, std::vector<Value>& W) {
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
     // Add the result to the writeout vector
-    W[c.idx()] = Fx+Fy+W[c.idx()];
+    // W[c.idx()] = Fx+Fy+W[c.idx()];
+    z.value() = Fx+Fy+z.value();
+    // Iterate stage_begin to keep up with cell_begin
+    ++stage_begin;
   }
   return;
 }

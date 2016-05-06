@@ -3,14 +3,12 @@
 
 /** Structured Grid code
  *  TODO:
- *    - Some method/class names are confusingly similar;
- *      for example we have both a Value return type, and
- *      a value() method for the grid. Change to dissimilar
- *      names!
+ *    - Fuckin' do it mate
  */
 
 #include <vector>     // data handling
 #include <valarray>   // std::valarray, std::begin, std::end
+#include <array>      // std::array
 #include <algorithm>  // std::copy
 #include <iostream>   // debug
 #include <cmath>      // floor
@@ -40,7 +38,8 @@ private:
   // Grid points
   std::vector<X> x_; // Grid points
   // Grid cell values
-  std::vector<value_type> v_; // Grid data
+  std::vector<value_type> v_;     // Grid data
+  std::array<std::vector<value_type>,4> k_; // Space for RK stages
   std::vector<value_type> left_;  // Left boundary, size()==n_
   std::vector<value_type> right_; // Right boundary, size()==n_
   std::vector<value_type> top_;   // Top boundary, size()==m_-2
@@ -172,6 +171,102 @@ private:
       return v_[(i-1)*(m_-2)+(j-1)];
     }
   }
+  /* --- RK Stage Helpers --- */
+  /** Return RK4 stage cell value at index pair
+   * 
+   * @param i Vertical index
+   * @param j Horizontal index
+   * @param ind Stage index
+   * 
+   * @pre 0<=i<=n_-1, interior points are strict inequality
+   * @pre 0<=j<=m_-1
+   * @pre 0<=ind<=3
+   */
+  value_type stage_value(size_type i, size_type j, size_type ind) {
+
+    // DEBUG bound assertions
+    assert(i<n_);
+    assert(j<m_);
+    // Left Boundary
+    if (j==0) {
+      // Top corner
+      if (i==0)
+        return bc_helper(left_b_[i],left_[i],stage_value(i+1,j+1,ind));
+      // Bottom corner
+      else if (i==n_-1)
+        return bc_helper(left_b_[i],left_[i],stage_value(i-1,j+1,ind));
+      // Side wall
+      else
+        return bc_helper(left_b_[i],left_[i],stage_value(i,j+1,ind));
+    }
+    // Right Boundary
+    else if (j==m_-1) {
+      // Top corner
+      if (i==0)
+        return bc_helper(left_b_[i],left_[i],stage_value(i+1,j-1,ind));
+      // Bottom corner
+      else if (i==n_-1)
+        return bc_helper(left_b_[i],left_[i],stage_value(i-1,j-1,ind));
+      // Side wall
+      else
+        return bc_helper(right_b_[i],right_[i],stage_value(i,j-1,ind));
+    }
+    // Top Boundary
+    else if (i==0) {
+      // return top_[j-1];
+      return bc_helper(top_b_[i],top_[i],stage_value(i+1,j,ind));
+    }
+    // Bot Boundary
+    else if (i==n_-1) {
+      // return bot_[j-1];
+      return bc_helper(bot_b_[i],bot_[i],stage_value(i-1,j,ind));
+    }
+    // Interior point
+    else {
+      return k_[ind][(i-1)*(m_-2)+(j-1)];
+    }
+  }
+  /** Set RK stage cell value at index pair
+   * 
+   * Note that this function ignores any 
+   * sort of boundary conditions.
+   * 
+   * @param i Vertical index
+   * @param j Horizontal index
+   * @param ind RK stage index
+   * @param val Value to assign
+   * 
+   * @pre 0<=i<=n_-1
+   * @pre 0<=j<=m_-1
+   * @pre 0<=ind<=3
+   */
+  value_type stage_set(size_type i, size_type j, size_type ind, value_type val) {
+    // Left Boundary
+    if (j==0) {
+      left_[i] = val;
+      return left_[i];
+    }
+    // Right Boundary
+    else if (j==m_-1) {
+      right_[i] = val;
+      return right_[i];
+    }
+    // Top Boundary
+    else if (i==0) {
+      top_[j-1] = val;
+      return top_[j-1];
+    }
+    // Bot Boundary
+    else if (i==n_-1) {
+      bot_[j-1] = val;
+      return bot_[j-1];
+    }
+    // Interior point
+    else {
+      k_[ind][(i-1)*(m_-2)+(j-1)] = val;
+      return k_[ind][(i-1)*(m_-2)+(j-1)];
+    }
+  }
   /** Vector file writeout
    * @brief Writes a set of vector points 
    *        to a formatted data file
@@ -238,6 +333,10 @@ public:
         v_[i*(m_-2)+j] = v[(i+1)*m_+(j+1)];
       }
     }
+    // Resize each RK stage container
+    for (size_type ind=0; ind<4; ++ind) {
+      k_[ind].resize((n_-2)*(m_-2));
+    }
     // Copy grid point values
     x_.resize(x.size());
     std::copy(x.begin(),x.end(),x_.begin());
@@ -270,46 +369,77 @@ public:
     }
   }
   // 
+  // STAGE HANDLING FUNCTIONS
+  //
+  /* Fill RK stage containers
+   * @brief Fills all RK stage containers with
+   *        a provided state vector value
+   * @param val State vector fill value
+   */
+  void fill_stages(value_type val) {
+    for (size_type ind=0; ind<4; ++ind) {
+      std::fill(k_[ind].begin(),k_[ind].end(),val);
+    }
+  }
+
+  // 
   // PUBLIC PROXY OBJECTS
   // 
   /** Access return type
    */
-  class Value {
+  class Proxy {
     friend class Access;
     friend class StructuredGrid;
     size_type i_,j_;
     StructuredGrid* grid_;
+    short ind_;
   public:
     /* Invalid Constructor */
-    Value() {}
+    Proxy() {}
     /* Public Constructor */
-    Value(size_type i, size_type j, StructuredGrid* grid)
-      : i_(i), j_(j), grid_(grid) {}
+    Proxy(size_type i, size_type j, StructuredGrid* grid, short ind=-1)
+      : i_(i), j_(j), grid_(grid), ind_(ind) {}
     /* Value Assignment Operator */
-    Value operator=(Value val) {
+    Proxy operator=(Proxy val) {
       i_ = val.i_;
       j_ = val.j_;
       grid_ = val.grid_;
+      ind_ = val.ind_;
     }
     /* Forwarding Assignment Operator */
     value_type operator=(value_type val) {
-      return grid_->set(i_,j_,val);
+      if (ind_==-1)
+        return grid_->set(i_,j_,val);
+      else
+        return grid_->stage_set(i_,j_,ind_,val);
     }
     /* Implicit Conversion Operator */
     operator value_type() const { 
-      return grid_->value(i_,j_); 
+      if (ind_==-1)
+        return grid_->value(i_,j_); 
+      else
+        return grid_->stage_value(i_,j_,ind_); 
     }
     /* Const Subscript Operator */
     scalar_type operator[](size_type ind) const {
-      return grid_->value(i_,j_)[ind];
+      if (ind_==-1)
+        return grid_->value(i_,j_)[ind];
+      else
+        return grid_->stage_value(i_,j_,ind_)[ind];
     }
     /* Size */
     size_type size() {
-      return grid_->value(i_,j_).size();
+      if (ind_==-1)
+        return grid_->value(i_,j_).size();
+      else
+        return grid_->stage_value(i_,j_,ind_).size();
     }
     // DEBUG -- Print value to console
     void print() {
-      grid_->print_state(grid_->value(i_,j_));
+      if (ind_==-1)
+        grid_->print_state(grid_->value(i_,j_));
+      else
+        grid_->print_state(grid_->stage_value(i_,j_,ind_));
     }
   };
   /** @class StructuredGrid::Access
@@ -325,8 +455,8 @@ public:
         : grid_(const_cast<StructuredGrid*>(grid)) {}
     // Public Member functions
   public:
-    Value operator()(size_type i, size_type j) {
-      return Value(i,j,grid_);
+    Proxy operator()(size_type i, size_type j, short ind=-1) {
+      return Proxy(i,j,grid_,ind);
     }
   };
   
@@ -349,9 +479,10 @@ public:
     StructuredGrid* grid_;
     // Cell index
     size_type i_,j_;
+    short ind_;
     // Private constructor
-    Cell(const StructuredGrid* grid, size_type i, size_type j)
-        : grid_(const_cast<StructuredGrid*>(grid)), i_(i), j_(j) {}
+    Cell(const StructuredGrid* grid, size_type i, size_type j, short ind=-1)
+        : grid_(const_cast<StructuredGrid*>(grid)), i_(i), j_(j), ind_(ind) {}
   public:
     // Public state vector type
     typedef value_type CellValue;
@@ -362,15 +493,15 @@ public:
     size_type jx() {
       return j_;
     }
-    Value value() {
-      return Value(i_,j_,grid_);
+    Proxy value() {
+      return Proxy(i_,j_,grid_,ind_);
     }
     /* Interior cell index */
     size_type idx() const {
       return (i_-1)*(grid_->m_-2)+j_-1;
     }
     // Returns value of cell at relative index
-    Value value(int di, int dj) {
+    Proxy value(int di, int dj) {
       // Compute indices
       di = di+i_;
       dj = dj+j_;
@@ -380,7 +511,7 @@ public:
       if (dj<0) dj=0;
       else if (dj>int(grid_->m_-1)) dj=int(grid_->m_-1);
       // Access value
-      return Value(di,dj,grid_);
+      return Proxy(di,dj,grid_,ind_);
     }
     // Returns neighbor cell at relative index
     Cell neighbor(int di, int dj) {
@@ -393,7 +524,7 @@ public:
       if (dj<0) dj=0;
       else if (dj>int(grid_->m_-1)) dj=int(grid_->m_-1);
       // Access cell
-      return grid_->cell(di,dj);
+      return grid_->cell(di,dj,ind_);
     }
     /** Returns cell corner point
      * @param n Corner point index
@@ -427,24 +558,27 @@ public:
    };
 
    // Return cell object by interior id number
-   Cell cell(size_type idx) {
-    return Cell(this,floor(idx/(m_-2))+1,idx%(m_-2)+1);
+   Cell cell(size_type idx, short id=-1) {
+    return Cell(this,floor(idx/(m_-2))+1,idx%(m_-2)+1,id);
    }
    /** Return cell by id pair
     * @pre 0 <= i <= n_-1
     * @pre 0 <= j <= m_-1
     */
-   Cell cell(size_type i, size_type j) {
-    return Cell(this,i,j);
+   Cell cell(size_type i, size_type j, short id=-1) {
+    return Cell(this,i,j,id);
    }
   //
   // CELL ITERATOR
   //
-  class cell_iterator : private totally_ordered<cell_iterator> {
+  class CellIterator : private totally_ordered<CellIterator> {
   private:
-    StructuredGrid* grid_;
-    size_type idx_;
+    StructuredGrid* grid_;  // Grid pointer
+    size_type idx_;         // Cell index
+    short id_;              // RK stage index (-1 for true grid)
   public:
+    // Value type from grid
+    typedef Val                       Value;
     // Iterator traits (magic)
     typedef Cell                      value_type;
     typedef Cell*                     pointer;
@@ -452,24 +586,25 @@ public:
     typedef std::ptrdiff_t            difference_type;
     typedef std::forward_iterator_tag iterator_category;
     // Public constructor
-    cell_iterator(const StructuredGrid* grid, 
-                  size_type idx) :
-      grid_(const_cast<StructuredGrid*>(grid)), idx_(idx) {}
+    CellIterator(const StructuredGrid* grid, 
+                  size_type idx,
+                  short id=-1) :
+      grid_(const_cast<StructuredGrid*>(grid)), idx_(idx), id_(id) {}
     // Implement minimal methods
     Cell operator*() const {
       return grid_->cell(idx_);
     }
-    cell_iterator& operator++() { ++idx_; return *this; }
-    bool operator==(const cell_iterator& iter) const {
+    CellIterator& operator++() { ++idx_; return *this; }
+    bool operator==(const CellIterator& iter) const {
       return idx_ == iter.idx_;
     }
   };
-  // Return a cell_iterator
-  cell_iterator cell_begin() const {
-    return cell_iterator(this,0);
+  // StructuredGrid methods to return a CellIterator
+  CellIterator cell_begin(short id=-1) const {
+    return CellIterator(this,0,id);
   }
-  cell_iterator cell_end() const {
-    return cell_iterator(this,v_.size());
+  CellIterator cell_end(short id=-1) const {
+    return CellIterator(this,v_.size(),id);
   }
 
   // 
@@ -516,7 +651,7 @@ public:
     for (size_type i=0; i+1<v.size(); ++i) {
       std::cout << v[i] << ",";
     }
-    std::cout << v.back() << ")";
+    std::cout << v[v.size()-1] << ")";
   }
   /* Print interior points */
   void printv() {

@@ -77,19 +77,19 @@ int main() {
   // Define grid
   StructuredGrid<scalar,coord,value,flag> grid(Nt,Mt,V,X,
                                         left_b,right_b,top_b,bot_b);
+  auto val = grid.access();
 
   // DEBUG -- Check bc handling
-  auto val = grid.access();
-  val(35,37).print(); std::cout<<std::endl;
-
-  /* --- RESERVE SPACE FOR RK4 --- */
-  value zeros = {0,0,0,0};
-  std::vector<value> v0( (Nt-2)*(Mt-2) );
+  // val(35,37).print(); std::cout<<std::endl;
 
   /* --- RUN SOLVER --- */
-  std::fill(v0.begin(),v0.end(),zeros);
+  grid.fill_stages({0,0,0,0}); // Zero out the RK stages
+
   // DEBUG -- single step
-  // eflux(grid.cell_begin(),grid.cell_end(),v0);
+  eflux(grid.cell_begin(),grid.cell_end(),grid.cell_begin(0));
+
+  // DEBUG -- Check the results of Euler flux
+  val(35,1,0).print(); std::cout<<std::endl;
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");      // grid points
