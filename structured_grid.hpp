@@ -16,6 +16,8 @@
 
 #include "Util.hpp"   // totally_ordered
 
+#define stages_ 5
+
 /** 2-D Structured Grid class
  * @tparam Val Grid value type
  */
@@ -39,7 +41,7 @@ private:
   std::vector<X> x_; // Grid points
   // Grid cell values
   std::vector<value_type> v_;     // Grid data
-  std::array<std::vector<value_type>,4> k_; // Space for RK stages
+  std::array<std::vector<value_type>,stages_> k_; // Space for RK stages
   std::vector<value_type> left_;  // Left boundary, size()==n_
   std::vector<value_type> right_; // Right boundary, size()==n_
   std::vector<value_type> top_;   // Top boundary, size()==m_-2
@@ -180,7 +182,7 @@ private:
    * 
    * @pre 0<=i<=n_-1, interior points are strict inequality
    * @pre 0<=j<=m_-1
-   * @pre 0<=ind<=3
+   * @pre 0<=ind<stages_
    */
   value_type stage_value(size_type i, size_type j, size_type ind) {
 
@@ -238,7 +240,7 @@ private:
    * 
    * @pre 0<=i<=n_-1
    * @pre 0<=j<=m_-1
-   * @pre 0<=ind<=3
+   * @pre 0<=ind<stages_
    */
   value_type stage_set(size_type i, size_type j, size_type ind, value_type val) {
     // Left Boundary
@@ -334,7 +336,7 @@ public:
       }
     }
     // Resize each RK stage container
-    for (size_type ind=0; ind<4; ++ind) {
+    for (size_type ind=0; ind<stages_; ++ind) {
       k_[ind].resize((n_-2)*(m_-2));
     }
     // Copy grid point values
@@ -377,7 +379,7 @@ public:
    * @param val State vector fill value
    */
   void fill_stages(value_type val) {
-    for (size_type ind=0; ind<4; ++ind) {
+    for (size_type ind=0; ind<stages_; ++ind) {
       std::fill(k_[ind].begin(),k_[ind].end(),val);
     }
   }
@@ -385,7 +387,9 @@ public:
   // 
   // PUBLIC PROXY OBJECTS
   // 
-  /** Access return type
+  /** @class StructuredGrid::Proxy
+   * @brief Provides read and write access to grid
+   *        cell values through proxy object
    */
   class Proxy {
     friend class Access;
@@ -427,7 +431,7 @@ public:
       else
         return grid_->stage_value(i_,j_,ind_)[ind];
     }
-    /* Size */
+    /* Size of referenced container */
     size_type size() {
       if (ind_==-1)
         return grid_->value(i_,j_).size();
@@ -443,7 +447,7 @@ public:
     }
   };
   /** @class StructuredGrid::Access
-   *  @brief Proxy object for accessing grid data
+   *  @brief Lightweight proxy object for accessing grid data
    */
   class Access {
     // Allow StructuredGrid to access this object
@@ -469,6 +473,7 @@ public:
    * 
    * @param grid Parent grid
    * @param idx  Cell id number
+   * @param ind  RK stage number, -1 for solution values
    * 
    * @pre 0 <= idx <= v_.size()
    */
@@ -486,6 +491,10 @@ public:
   public:
     // Public state vector type
     typedef value_type CellValue;
+    // Forward assignment operator
+    CellValue operator=(CellValue val) {
+      return Proxy(i_,j_,grid_,ind_)=val;
+    }
     // Public Member functions
     size_type iy() {
       return i_;
@@ -592,7 +601,7 @@ public:
       grid_(const_cast<StructuredGrid*>(grid)), idx_(idx), id_(id) {}
     // Implement minimal methods
     Cell operator*() const {
-      return grid_->cell(idx_);
+      return grid_->cell(idx_,id_);
     }
     CellIterator& operator++() { ++idx_; return *this; }
     bool operator==(const CellIterator& iter) const {

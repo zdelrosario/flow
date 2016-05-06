@@ -195,8 +195,8 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
     // Add the result to the writeout vector
-    // W[c.idx()] = Fx+Fy+W[c.idx()];
-    z.value() = Fx+Fy+z.value();
+    // z.value() = Fx+Fy+z.value();
+    z = Fx+Fy+z.value();
     // Iterate stage_begin to keep up with cell_begin
     ++stage_begin;
   }
