@@ -38,7 +38,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  scalar     h = 1e-3;       // time step
+  scalar     h = 1e-6;       // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
   // Discretization parameters
@@ -53,8 +53,7 @@ int main() {
   /* --- SET UP GRID --- */
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
-  // value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
-  value U_wall = {2*rho_inf,0,0,2*rho_inf*e_inf};   // Wall state
+  value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
   // Boundary conditions
   flag B_wall = {1,0,0,1}; // Dirichlet in momentum, neumann in density and energy
   flag B_dir  = {0,0,0,0}; // Full dirichlet condition
@@ -87,7 +86,7 @@ int main() {
   grid.fill_stages({0,0,0,0}); // Zero out the RK stages
 
   // DEBUG -- single iteration of RK
-  size_type i=32,j=1;
+  size_type i=1,j=1;
   value y = {0,0,0,0}; value f = {0,0,0,0};
   value k1 = {0,0,0,0};
   value k2 = {0,0,0,0};

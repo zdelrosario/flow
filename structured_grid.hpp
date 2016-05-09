@@ -469,7 +469,7 @@ public:
     return Access(this);
   }
   /** @class StructuredGrid::Cell
-   *  @brief Proxy object for a grid cell
+   *  @brief Proxy object for a gkrid cell
    * 
    * @param grid Parent grid
    * @param idx  Cell id number
@@ -489,8 +489,9 @@ public:
     Cell(const StructuredGrid* grid, size_type i, size_type j, short ind=-1)
         : grid_(const_cast<StructuredGrid*>(grid)), i_(i), j_(j), ind_(ind) {}
   public:
-    // Public state vector type
+    // Public types
     typedef value_type CellValue;
+    typedef scalar_type CellScalar;
     // Forward assignment operator
     CellValue operator=(CellValue val) {
       return Proxy(i_,j_,grid_,ind_)=val;

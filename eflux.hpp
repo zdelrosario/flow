@@ -12,9 +12,7 @@
 using size_type = unsigned;
 
 float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
-float K2 = 1;
-float K4 = 1/32;
-float C4 = 2;
+float eps = 0.25;
 
 // 
 // VECTOR HELPER FUNCTIONS
@@ -42,7 +40,7 @@ float wave_x(const Value& w) {
   return std::abs(w[1]/w[0])+cf(w);
 }
 
-/** Horizontal Wave Speed
+/** Vertical Wave Speed
  */
 template <typename Value>
 float wave_y(const Value& w) {
@@ -50,7 +48,7 @@ float wave_y(const Value& w) {
 }
 
 /** Horizontal flux
- * @brief Calculates the horizontal flux based on a state vector
+ * @brief Calculates the physical horizontal flux based on a state vector
  * 
  * @param w   Input state vector
  */
@@ -68,10 +66,9 @@ Value f(const Value& w) {
 }
 
 /** Vertical flux
- * @brief Calculates the vertical flux based on a state vector
+ * @brief Calculates the physical vertical flux based on a state vector
  * 
  * @param w   Input state vector
- * @param out Output flux vector
  */
 template <typename Value>
 Value g(const Value& w) {
@@ -116,6 +113,32 @@ typename Cell::CellValue dw_dy(Cell c) {
   return typename Cell::CellValue(c.value(0,1)) - typename Cell::CellValue(c.value());
 }
 
+/** Jameson Horizontal Flux
+ */
+template <typename Cell>
+typename Cell::CellValue fj(Cell c) {
+  return typename Cell::CellScalar(0.5)*(
+            f(typename Cell::CellValue(c.value(1,0))) 
+          + f(typename Cell::CellValue(c.value()))
+          ) + typename Cell::CellScalar(-eps/2)*(
+            wave_x(typename Cell::CellValue(c.value(1,0)))
+          + wave_x(typename Cell::CellValue(c.value()))
+          ) * dw_dx(c);
+}
+
+/** Jameson Vertical Flux
+ */
+template <typename Cell>
+typename Cell::CellValue gj(Cell c) {
+  return typename Cell::CellScalar(0.5)*(
+            g(typename Cell::CellValue(c.value(0,1))) 
+          + g(typename Cell::CellValue(c.value()))
+          ) + typename Cell::CellScalar(-eps/2)*(
+            wave_y(typename Cell::CellValue(c.value(0,1)))
+          + wave_y(typename Cell::CellValue(c.value()))
+          ) * dw_dy(c);
+}
+
 // 
 // EULER FLUX
 // 
@@ -142,61 +165,24 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
   using scalar = typename Value::value_type;
   size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
-  Value h(cs),d(cs),Fx(cs), k(cs),e(cs),Fy(cs), temp(cs);
-  float e2,e4,d2,d4,Sx,Sy,Rx,Ry;
+  Value Fx(cs), Fy(cs);
 
   /* --- ITERATE OVER CELLS --- */
   for ( ; cell_begin!=cell_end; ++cell_begin) {
     // Dereference cell
-    auto c = *cell_begin;
-    auto z = *stage_begin;
+    auto c = *cell_begin;   // Read
+    auto z = *stage_begin;  // Write
     // DEBUG -- Print cell index
 // std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
 // std::cout << std::endl;
-    /* --- COMPUTE +1/2 BOUNDARIES --- */
-    // Compute coefficients
-    Sx = std::max(sense_x(c),sense_x(c.neighbor(1,0)));
-    Sy = std::max(sense_y(c),sense_y(c.neighbor(0,1)));
-    Rx = std::max(wave_x(c.value()),wave_x(c.value(1,0)));
-    Ry = std::max(wave_y(c.value()),wave_y(c.value(0,1)));
-    e2 = K2*Sx*Rx;  e4 = std::max(float(0.),K4*Rx-C4*e2);
-    d2 = K2*Sy*Ry;  d4 = std::max(float(0.),K4*Ry-C4*d2);
-    // Compute vector differences
-    temp = dw_dx(c.neighbor(1,0))+dw_dx(c.neighbor(-1,0))-scalar(2)*dw_dx(c);
-    d = e2*dw_dx(c) - e4*temp;
-    temp = dw_dy(c.neighbor(0,1))+dw_dy(c.neighbor(0,-1))-scalar(2)*dw_dy(c);
-    e = d2*dw_dy(c) - d4*temp;
-    // Compute fluxes
-    h = scalar(0.5)*( f(Value(c.value(1,0))) + f(Value(c.value())) ) - d;
-    k = scalar(0.5)*( g(Value(c.value(0,1))) + g(Value(c.value())) ) - e;
-
-    Fx= h;
-    Fy= k;
-    /* --- COMPUTE -1/2 BOUNDARIES --- */
-    // Compute coefficients
-    Sx = std::max(sense_x(c),sense_x(c.neighbor(-1,0)));
-    Sy = std::max(sense_y(c),sense_y(c.neighbor(0,-1)));
-    Rx = std::max(wave_x(c.value()),wave_x(c.value(-1,0)));
-    Ry = std::max(wave_y(c.value()),wave_y(c.value(0,-1)));
-    e2 = K2*Sx*Rx;  e4 = std::max(float(0.),K4*Rx-C4*e2);
-    d2 = K2*Sy*Ry;  d4 = std::max(float(0.),K4*Ry-C4*d2);
-    // Compute vector differences
-    temp = dw_dx(c)+dw_dx(c.neighbor(-2,0))-scalar(2)*dw_dx(c.neighbor(-1,0));
-    d = e2*dw_dx(c.neighbor(-1,0)) - e4*temp;
-    temp = dw_dy(c)+dw_dy(c.neighbor(0,-2))-scalar(2)*dw_dy(c.neighbor(0,-1));
-    e = d2*dw_dy(c.neighbor(0,-1)) - d4*temp;
-    // Compute fluxes
-    h = scalar(0.5)*( f(Value(c.value(-1,0))) + f(Value(c.value())) ) - d;
-    k = scalar(0.5)*( g(Value(c.value(0,-1))) + g(Value(c.value())) ) - e;
-
-    Fx= Fx-h;
-    Fy= Fy-k;
+    /* --- COMPUTE FLUXES --- */
+    Fx = fj(c) + scalar(-1)*fj(c.neighbor(-1,0));
+    Fy = gj(c) + scalar(-1)*gj(c.neighbor(0,-1));
     // Scale the fluxes
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
     // Add the result to the writeout vector
-    // z.value() = Fx+Fy+z.value();
-    z = Fx+Fy+z.value();
+    z = scalar(-1)*(Fx+Fy)+z.value();
     // Iterate stage_begin to keep up with cell_begin
     ++stage_begin;
   }
