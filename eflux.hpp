@@ -86,20 +86,6 @@ Value g(const Value& w) {
 // 
 // CELL HELPER FUNCTIONS
 // 
-/** Horizontal Shock Sensor
- */
-template <typename Cell>
-float sense_x(Cell c) {
-  return std::abs( (pf(c.value(1,0))+pf(c.value(-1,0))-2*pf(c.value())) / 
-              (pf(c.value(1,0))+pf(c.value(-1,0))+2*pf(c.value())) );
-}
-/** Vertical Shock Sensor
- */
-template <typename Cell>
-float sense_y(Cell c) {
-  return std::abs( (pf(c.value(0,1))+pf(c.value(0,-1))-2*pf(c.value())) / 
-              (pf(c.value(0,1))+pf(c.value(0,-1))+2*pf(c.value())) );
-}
 /** Horizontal State Difference
  */
 template <typename Cell>
@@ -110,7 +96,7 @@ typename Cell::CellValue dw_dx(Cell c) {
  */
 template <typename Cell>
 typename Cell::CellValue dw_dy(Cell c) {
-  return typename Cell::CellValue(c.value(0,1)) - typename Cell::CellValue(c.value());
+  return typename Cell::CellValue(c.value(0,-1)) - typename Cell::CellValue(c.value());
 }
 
 /** Jameson Horizontal Flux
@@ -131,10 +117,10 @@ typename Cell::CellValue fj(Cell c) {
 template <typename Cell>
 typename Cell::CellValue gj(Cell c) {
   return typename Cell::CellScalar(0.5)*(
-            g(typename Cell::CellValue(c.value(0,1))) 
+            g(typename Cell::CellValue(c.value(0,-1))) 
           + g(typename Cell::CellValue(c.value()))
           ) + typename Cell::CellScalar(-eps/2)*(
-            wave_y(typename Cell::CellValue(c.value(0,1)))
+            wave_y(typename Cell::CellValue(c.value(0,-1)))
           + wave_y(typename Cell::CellValue(c.value()))
           ) * dw_dy(c);
 }
@@ -177,7 +163,7 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
 // std::cout << std::endl;
     /* --- COMPUTE FLUXES --- */
     Fx = fj(c) + scalar(-1)*fj(c.neighbor(-1,0));
-    Fy = gj(c) + scalar(-1)*gj(c.neighbor(0,-1));
+    Fy = gj(c) + scalar(-1)*gj(c.neighbor(0,1));
     // Scale the fluxes
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
