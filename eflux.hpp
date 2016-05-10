@@ -105,11 +105,11 @@ template <typename Cell>
 typename Cell::CellValue fj(Cell c) {
   return typename Cell::CellScalar(0.5)*(
             f(typename Cell::CellValue(c.value(1,0))) 
-          + f(typename Cell::CellValue(c.value()))
-          ) + typename Cell::CellScalar(-eps/2)*(
+          + f(typename Cell::CellValue(c.value()))      // physical flux
+          ) + typename Cell::CellScalar(-eps/2)*(       // average wave speed
             wave_x(typename Cell::CellValue(c.value(1,0)))
           + wave_x(typename Cell::CellValue(c.value()))
-          ) * dw_dx(c);
+          ) * dw_dx(c);   // state vector difference
 }
 
 /** Jameson Vertical Flux
@@ -118,11 +118,11 @@ template <typename Cell>
 typename Cell::CellValue gj(Cell c) {
   return typename Cell::CellScalar(0.5)*(
             g(typename Cell::CellValue(c.value(0,-1))) 
-          + g(typename Cell::CellValue(c.value()))
-          ) + typename Cell::CellScalar(-eps/2)*(
+          + g(typename Cell::CellValue(c.value()))      // physical flux
+          ) + typename Cell::CellScalar(-eps/2)*(       // average wave speed
             wave_y(typename Cell::CellValue(c.value(0,-1)))
           + wave_y(typename Cell::CellValue(c.value()))
-          ) * dw_dy(c);
+          ) * dw_dy(c);   // state vector difference
 }
 
 // 
@@ -164,7 +164,7 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
     /* --- COMPUTE FLUXES --- */
     Fx = fj(c) + scalar(-1)*fj(c.neighbor(-1,0));
     Fy = gj(c) + scalar(-1)*gj(c.neighbor(0,1));
-    // Scale the fluxes
+    // Scale the fluxes by spatial discretization
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
     // Add the result to the writeout vector
