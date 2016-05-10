@@ -1,6 +1,7 @@
 #include "structured_grid.hpp"
 #include "grid_mapping.hpp"
 #include "eflux.hpp"
+#include "nsflux.hpp"
 
 #include <iostream>   // std::cout, std::endl
 #include <array>      // std::array
@@ -44,11 +45,11 @@ int main() {
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
-  int Mt = 38; // Total horizontal cells
+  int Mt = 40; // Total horizontal cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
-  std::vector<coord> X((Nt-1)*(Mt-1));  // Generate grid points for
-  make_flat_plate((Nt-1),Nbl,(Mt-1),X); // boundary layer simulation
+  std::vector<coord> X((Nt-1)*(Mt-1));    // Generate grid points for
+  make_flat_plate((Nt-1),Nbl,(Mt-1),X,4); // boundary layer simulation
 
   /* --- SET UP GRID --- */
   // Flow conditions
@@ -86,14 +87,14 @@ int main() {
   grid.fill_stages({0,0,0,0}); // Zero out the RK stages
 
   // DEBUG -- single iteration of RK
-  size_type i=1,j=1;
-  value y = {0,0,0,0}; value f = {0,0,0,0};
-  value k1 = {0,0,0,0};
-  value k2 = {0,0,0,0};
-  value k3 = {0,0,0,0};
-  value k4 = {0,0,0,0};
+  size_type i=34,j=1; // Bottom left
+  // size_type i=1,j=1; // Top left
+  value y = {0,0,0,0};   value f = {0,0,0,0};
+  value k1 = {0,0,0,0};  value k2 = {0,0,0,0};
+  value k3 = {0,0,0,0};  value k4 = {0,0,0,0};
   // Stage 1
   eflux(grid.cell_begin(),grid.cell_end(),grid.cell_begin(0));
+  nsflux(grid.cell_begin(),grid.cell_end(),grid.cell_begin(0));
   auto flux_it = grid.cell_begin(0);
   auto  out_it = grid.cell_begin(4);
   for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
@@ -109,6 +110,7 @@ std::cout << "Result of stage 1" << std::endl;
 val(i,j,4).print(); std::cout<<std::endl;
   // Stage 2
   eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(1));
+  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(1));
   flux_it = grid.cell_begin(1);
    out_it = grid.cell_begin(4);
   for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
@@ -124,6 +126,7 @@ std::cout << "Result of stage 2" << std::endl;
 val(i,j,4).print(); std::cout<<std::endl;
   // Stage 3
   eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(2));
+  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(2));
   flux_it = grid.cell_begin(2);
    out_it = grid.cell_begin(4);
   for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
@@ -139,6 +142,7 @@ std::cout << "Result of stage 3" << std::endl;
 val(i,j,4).print(); std::cout<<std::endl;
   // Stage 4
   eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(3));
+  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(3));
   auto k1_it = grid.cell_begin(0);
   auto k2_it = grid.cell_begin(1);
   auto k3_it = grid.cell_begin(2);
@@ -147,10 +151,8 @@ val(i,j,4).print(); std::cout<<std::endl;
   for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
     // Apply RK stage
     y  = (*it).value();
-    k1 = (*k1_it).value();
-    k2 = (*k2_it).value();
-    k3 = (*k3_it).value();
-    k4 = (*k4_it).value();
+    k1 = (*k1_it).value();    k2 = (*k2_it).value();
+    k3 = (*k3_it).value();    k4 = (*k4_it).value();
     (*out_it) = y + h/scalar(6.0)*(k1+scalar(2)*k2+scalar(2)*k3+k4);
     // Iterate
     ++flux_it;
@@ -159,12 +161,12 @@ val(i,j,4).print(); std::cout<<std::endl;
 
   // DEBUG -- Check the results of Euler flux
   std::cout << "end of RK step" << std::endl;
-  val(i,j).print(); std::cout<<std::endl;   // y(t=0)
-  val(i,j,0).print(); std::cout<<std::endl; // k1
-  val(i,j,1).print(); std::cout<<std::endl; // k2
-  val(i,j,2).print(); std::cout<<std::endl; // k3
-  val(i,j,3).print(); std::cout<<std::endl; // k4
-  val(i,j,4).print(); std::cout<<std::endl; // y(t=h)
+  std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
+  std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
+  std::cout<<"k2=";     val(i,j,1).print(); std::cout<<std::endl; // k2
+  std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3
+  std::cout<<"k4=";     val(i,j,3).print(); std::cout<<std::endl; // k4
+  std::cout<<"y(t=h)="; val(i,j,4).print(); std::cout<<std::endl; // y(t=h)
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");      // grid points

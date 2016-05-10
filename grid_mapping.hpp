@@ -1,9 +1,9 @@
 #ifndef MAP // Include guard
 #define MAP
 
-#include <iostream>
-#include <cmath>
-#include <string>
+#include <iostream> // std::cout
+#include <cmath>    // pow()
+#include <string>   // std::string
 
 #include "optimize.hpp"
 
@@ -15,6 +15,7 @@
  * @param Nbl Boundary vertical mesh points
  * @param Mt  Total horizontal mesh points
  * @param v   Array to which we will write the grid points
+ * @param pad Number of cells to pad forward and aft of plate
  * 
  * @pre Nbl < Nt
  * @pre size(v) == Nt*Mt
@@ -23,7 +24,7 @@
  * @post v Contains the x,y coordinates of the grid points
  */
 template <typename V>
-void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
+void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
   /* --- SETUP --- */
   // int Nt  = 34; // Total vertical mesh points
   // int Nbl = 22; // Boundary layer vertical points
@@ -32,6 +33,9 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
   float L = 0.1;        // Plate length
   float y_fm = 5.4e-4;  // Height of fine mesh
   float r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
+  float alp = 2;        // Expansion coefficient
+
+  float dx = L / (Mt-2*pad);
 
   /* --- FIND PARAMETER VALUES --- */
   // Objective function for k_fm
@@ -59,7 +63,7 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
     return (H-y_fm)*(exp(k_cm*(j-Nbl)/(Nt-Nbl))-1)/(exp(k_cm)-1)+y_fm;
   };
 
-  // Piecewise vertical points
+  // Vertical point function
   auto y_mesh = [&](int i) {
     if (i<=Nbl) {
       return y_i(i);
@@ -68,38 +72,44 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v) {
       return y_j(i);
     }
   };
+  // Horizontal point function
+  auto x_mesh = [&](int j) {
+    if (j==0)
+      return float(0);
+    else if (j<=pad) {
+      float temp = 0;
+      for (int i=0; i<j; ++i) 
+        temp += pow(alp,pad-i);
+      return float(temp * dx);
+    }
+    else if (j>=Mt-pad-1) {
+      float temp = 0;
+      for (int i=0; i<pad; ++i) 
+        temp += pow(alp,pad-i);
+      for (int i=0; i<(j-Mt+pad+1); ++i)
+        temp += pow(alp,j-Mt+pad);
+      return float((temp + j-pad)*dx);
+    }
+    else {
+      float temp = 0;
+      for (int i=0; i<pad; ++i) 
+        temp += pow(alp,pad-i);
+      return float((temp + j-pad)*dx);
+    }
+  };
+
   // Store grid values
-  for (int i=0; i<Nt; ++i) {
-    for (int j=0; j<Mt; ++j) {
+  for (int i=0; i<Nt; ++i) {    // vertical index
+    for (int j=0; j<Mt; ++j) {  // horizontal index
       // std::cout << v[i*Mt+j][0] << "->";
-      v[i*Mt+j][0] = L/Mt * j;  // X-value
-      v[i*Mt+j][1] = y_mesh(Nt-i-1); // Y-value
+      // Handle x values
+      v[i*Mt+j][0] = x_mesh(j);
+      // Handle y values
+      v[i*Mt+j][1] = y_mesh(Nt-i-1);
       // std::cout << v[i*Mt+j][0] << std::endl;
     }
   }
 
 }
-
-/** Grid file writeout -- DEPRECIATED
- * @brief Writes a set of x,y points to a 
- *        formatted data file
- *
- * @tparam V Array-like container, 2-Dimensional
- * 
- * @param outputfile String which defines output filename
- * @param v Vector which defines gridpoints
- * 
- * @post A file with name 'outputfile' is written to the
- *       local directory with the gridpoints
- */
-// template <typename V>
-// void writeout(std::string outputfile, V& v) {
-//   std::ofstream f_out(outputfile.c_str());
-//   // f_out.precision(5);
-//   // Write out elements
-//   for (auto it=v.begin(); it!=v.end(); ++it) {
-//     f_out << (*it)[0] << "," << (*it)[1] << std::endl;
-//   }
-// }
 
 #endif // MAP
