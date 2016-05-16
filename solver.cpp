@@ -12,7 +12,7 @@ using scalar = float;             // Specify solver precision
 
 using coord = std::array<scalar,2>; // Grid coordinates
 using value = std::valarray<scalar>;// State vector
-using flag  = std::array<bool,4>;   // Boundary condition flag
+using flag  = std::array<unsigned,4>;   // Boundary condition flag
 
 typedef StructuredGrid<scalar,coord,value,flag> GridType;
 typedef GridType::size_type size_type;

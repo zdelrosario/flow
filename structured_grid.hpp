@@ -3,7 +3,8 @@
 
 /** Structured Grid code
  *  TODO:
- *    - Fuckin' do it mate
+ *    - Add cell normals
+ *    - Add BC's: inflow, outflow, wall, symmetry
  */
 
 #include <vector>     // data handling
@@ -51,6 +52,17 @@ private:
   std::vector<flag_type> right_b_; // Right boundary flag, size()==n_
   std::vector<flag_type> top_b_;   // Top boundary flag, size()==m_-2
   std::vector<flag_type> bot_b_;   // Bot boundary flag, size()==m_-2
+  // Boundary cell normals
+  std::vector<value_type> left_n_;  // Left boundary flag, size()==n_
+  std::vector<value_type> right_n_; // Right boundary flag, size()==n_
+  std::vector<value_type> top_n_;   // Top boundary flag, size()==m_-2
+  std::vector<value_type> bot_n_;   // Bot boundary flag, size()==m_-2
+  // Freestream properties
+  scalar_type rho_inf;  // freestream density
+  scalar_type p_inf;    // freestream pressure
+  scalar_type u_inf;    // freestream horizontal velocity
+  scalar_type v_inf;    // freestream vertical velocity
+  scalar_type p_e;      // exit pressure
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
@@ -60,20 +72,57 @@ private:
    *        provided output vector.
    *
    * @param f   Boundary condition vector flag
-   * @param v_d Dirichlet value
-   * @param v_n Neumann value
+   * @param v_o Outer value
+   * @param v_i Inner value
+   * 
+   * Boundary conditions are specified by a unsigned vector
+   * which specifies the condition per- state vector element.
+   *    0 = dirichlet
+   *    1 = neumann
+   *    2 = mirror
+   * The following will apply the BC type to the
+   * entire state vector
+   *    3 = inflow
+   *    4 = outflow
    * 
    * @return State vector obeying boundary conditions
    */
-  value_type bc_helper(const flag_type& f, const value_type& v_d, const value_type& v_n) {
+  value_type bc_helper( const flag_type& f, 
+                        const value_type& v_o, 
+                        const value_type& v_i ) {
     // Reserve some space
     value_type res; res.resize(f.size());
+    
+    // Full-state BC
+    // unsigned bc_type = 0;
+    // for (size_type i=0; i!=f.size() ++i) {
+    //   if ( (f[i]==3) or (f[i]==4) )
+    //     bc_type = f[i];
+    // }
+    // // Apply full-state BC
+    // if (bc_type!=0) {
+    //   // Project velocity
+
+    //   // Inflow
+    //   if (bc_type==3) {
+
+    //   }
+    //   // Outflow
+    //   else if (bc_type==4) {
+
+    //   }
+    //   return res;
+    // }
+
+    // Fall through -- per-element BC
     // Choose element based on flag value
     for (size_type i=0; i!=f.size(); ++i) {
-      if (f[i] == 0)      // 0 == dirichlet
-        res[i] = v_d[i];
-      else                // 1 == neumann
-        res[i] = v_n[i];
+      if (f[i] == 1)      // 1 == neumann
+        res[i] = v_i[i];
+      else if (f[i] == 2) // 2 == mirror
+        res[i] = -v_i[i];
+      else                // 0 == dirichlet
+        res[i] = v_o[i];
     }
     // Return the result
     return res;
@@ -304,10 +353,15 @@ public:
    * @param v Initial conditions of cells
    * @param x Vector of physical cell corner points
    *
-   * Boundary conditions are specified by a boolean vector
+   * Boundary conditions are specified by a unsigned vector
    * which specifies the condition per- state vector element.
    *    0 = dirichlet
    *    1 = neumann
+   *    2 = mirror
+   * The following will apply the BC type to the
+   * entire state vector
+   *    3 = inflow
+   *    4 = outflow
    * 
    * @param left_b  Left boundary condition
    * @param right_b Right boundary condition
@@ -326,6 +380,12 @@ public:
                  std::vector<flag_type>& right_b,
                  std::vector<flag_type>& top_b,
                  std::vector<flag_type>& bot_b) {
+    // DEBUG -- set freestream conditions
+    scalar_type rho_inf = 1.1462;
+    scalar_type p_inf = 9.725e4;  // same as exit???
+    scalar_type u_inf = 68.93;    // 
+    scalar_type v_inf = 0.0;      // 
+    scalar_type p_e = 9.725e4;    // 
     // Copy grid dimensions
     n_ = n; m_ = m;
     // Copy interior cell values
@@ -369,6 +429,21 @@ public:
       top_[i] = *(v.begin()+i+1);
       bot_[i] = *(v.end()-m_+i+1);
     }
+
+    // DEBUG -- fix boundary normals for a box
+    left_n_.resize(left_b_.size());
+    right_n_.resize(right_b_.size());
+    top_n_.resize(top_b_.size());
+    bot_n_.resize(bot_b_.size());
+
+    std::fill(left_n_.begin(),left_n_.end(),  
+              value_type({0.0,-1.0,0.0,0.0}));
+    std::fill(right_n_.begin(),right_n_.end(),
+              value_type({0.0,+1.0,0.0,0.0}));
+    std::fill(top_n_.begin(),top_n_.end(),    
+              value_type({0.0,0.0,+1.0,0.0}));
+    std::fill(bot_n_.begin(),bot_n_.end(),    
+              value_type({0.0,0.0,-1.0,0.0}));
   }
   // 
   // STAGE HANDLING FUNCTIONS
