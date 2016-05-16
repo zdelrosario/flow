@@ -46,19 +46,21 @@ int main() {
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
   int Mt = 40; // Total horizontal cells
+  int buf = 4; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   std::vector<coord> X((Nt-1)*(Mt-1));    // Generate grid points for
-  make_flat_plate((Nt-1),Nbl,(Mt-1),X,4); // boundary layer simulation
+  make_flat_plate((Nt-1),Nbl,(Mt-1),X,buf); // boundary layer simulation
 
   /* --- SET UP GRID --- */
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
   value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
   // Boundary conditions
-  flag B_wall = {1,0,0,1}; // Dirichlet in momentum, neumann in density and energy
-  flag B_dir  = {0,0,0,0}; // Full dirichlet condition
-  flag B_neu  = {1,1,1,1}; // Full neumann condition
+  flag B_wall = {1,2,2,1}; // Mirror momentum, neumann in density and energy
+  flag B_in   = {3,3,3,3}; // Inlet condition
+  flag B_out  = {4,4,4,4}; // Outlet condition
+  flag B_mir  = {1,1,2,1}; // Vertical mirror
   // Reserve space for cell values
   std::vector<value> V( Nt*Mt, U_inf );
   // Set dirichlet value on bottom
@@ -67,11 +69,15 @@ int main() {
   }
 
   // Specify boundary condition flag vectors
-  std::vector<flag> left_b(Nt,B_dir);   // Dirichlet inlet
-  std::vector<flag> right_b(Nt,B_neu);  // Neumann outlet
-  right_b[Nt-1] = B_wall;               // plate extends to right end of domain
-  std::vector<flag> top_b(Mt-2,B_neu);  // Neumann top
+  std::vector<flag> left_b(Nt,B_in);    // Subsonic inlet
+  std::vector<flag> right_b(Nt,B_out);  // Subsonic outlet
+  std::vector<flag> top_b(Mt-2,B_out);  // Subsonic outlet
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
+  for (unsigned i=0; i<buf; ++i) {      // Freestream mirror
+    bot_b[i] = B_mir;
+    bot_b[Mt-3-i] = B_mir;
+  }
+  right_b[Nt-1] = B_mir;
 
   // Define grid
   GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);

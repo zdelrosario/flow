@@ -12,12 +12,13 @@
 #include <array>      // std::array
 #include <algorithm>  // std::copy
 #include <iostream>   // debug
-#include <cmath>      // floor
+#include <cmath>      // floor, sqrt
 #include <fstream>    // file handling
 
 #include "Util.hpp"   // totally_ordered
+#include "gas_dynamics.hpp" // 
 
-#define stages_ 5
+#define stages_ 5 // # of RK stages, plus one
 
 /** 2-D Structured Grid class
  * @tparam Val Grid value type
@@ -52,11 +53,11 @@ private:
   std::vector<flag_type> right_b_; // Right boundary flag, size()==n_
   std::vector<flag_type> top_b_;   // Top boundary flag, size()==m_-2
   std::vector<flag_type> bot_b_;   // Bot boundary flag, size()==m_-2
-  // Boundary cell normals
-  std::vector<value_type> left_n_;  // Left boundary flag, size()==n_
-  std::vector<value_type> right_n_; // Right boundary flag, size()==n_
-  std::vector<value_type> top_n_;   // Top boundary flag, size()==m_-2
-  std::vector<value_type> bot_n_;   // Bot boundary flag, size()==m_-2
+  // Boundary cell normals and paralleles
+  std::vector<value_type> left_n_;  // Left boundary [normal,parallel]
+  std::vector<value_type> right_n_; // Right boundary [normal,parallel]
+  std::vector<value_type> top_n_;   // Top boundary [normal,parallel]
+  std::vector<value_type> bot_n_;   // Bot boundary [normal,parallel]
   // Freestream properties
   scalar_type rho_inf;  // freestream density
   scalar_type p_inf;    // freestream pressure
@@ -66,6 +67,21 @@ private:
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
+  /** Project velocity
+   *
+   * @param v Input state vector
+   * @param n Normal against which to project
+   * @param u_n Variable to which to write normal speed
+   * @param u_p Variable to which to write parallel speed
+   * 
+   * @post u_n = v^T n
+   * @post u_p = v^T s, where s^T n=0
+   */
+  void proj_vel(const value_type& v, const value_type& n,
+                scalar_type& u_n, scalar_type& u_p) {
+    u_n = uf(v)*n[0] + vf(v)*n[1];
+    u_p = uf(v)*n[2] + vf(v)*n[3];
+  }
   /** Boundary condition helper function
    * @brief Switches between neumann and dirichlet boundary
    *        condition based on provided flag. Writes to
@@ -89,30 +105,60 @@ private:
    */
   value_type bc_helper( const flag_type& f, 
                         const value_type& v_o, 
+                        const value_type& n,
                         const value_type& v_i ) {
     // Reserve some space
     value_type res; res.resize(f.size());
     
     // Full-state BC
-    // unsigned bc_type = 0;
-    // for (size_type i=0; i!=f.size() ++i) {
-    //   if ( (f[i]==3) or (f[i]==4) )
-    //     bc_type = f[i];
-    // }
-    // // Apply full-state BC
-    // if (bc_type!=0) {
-    //   // Project velocity
+    unsigned bc_type = 0;
+    for (size_type i=0; i!=f.size(); ++i) {
+      if ( (f[i]==3) or (f[i]==4) )
+        bc_type = f[i];
+    }
+    // Apply full-state BC
+    if (bc_type!=0) {
+      // Project velocity
+      scalar_type u_n,u_p;
+      proj_vel(v_i,n,u_n,u_p);
 
-    //   // Inflow
-    //   if (bc_type==3) {
-
-    //   }
-    //   // Outflow
-    //   else if (bc_type==4) {
-
-    //   }
-    //   return res;
-    // }
+      // Inflow
+      if (bc_type==3) {
+        // Compute Riemann invariants
+        scalar_type c_o = sqrt(gam*p_inf/rho_inf);
+        scalar_type u_o = u_inf;
+        scalar_type c_i = cf(v_i);
+        scalar_type R_p = u_o + 2*c_o / (gam-1);
+        scalar_type R_m = u_n - 2*c_i / (gam-1);
+        // Compute values
+        u_n = 0.5*(R_p+R_m);
+        c_o = 0.25*(gam-1)*(R_p-R_m);
+        // Assign state values
+        res[0] = rho_inf;
+        res[1] = v_i[0]*(u_n*n[0] + u_p*n[2]);
+        res[2] = v_i[0]*(u_n*n[1] + u_p*n[3]);
+        res[3] = p_inf/(gam-1) + 0.5*rho_inf*(pow(u_n,2)+pow(u_p,2));
+      }
+      // Outflow
+      else if (bc_type==4) {
+        // Compute Riemann invariants
+        scalar_type c_o = sqrt(gam*p_e/v_i[0]);
+        scalar_type u_o = u_inf;
+        scalar_type c_i = cf(v_i);
+        scalar_type R_p = u_n + 2*c_i / (gam-1);
+        scalar_type R_m = u_o - 2*c_o / (gam-1);
+        // Compute values
+        u_n = 0.5*(R_p+R_m);
+        c_o = 0.25*(gam-1)*(R_p-R_m);
+        // Assign state values
+        res[0] = v_i[0]; // density
+        res[1] = v_i[0]*(u_n*n[0] + u_p*n[2]);
+        res[2] = v_i[0]*(u_n*n[1] + u_p*n[3]);
+        res[3] = p_e/(gam-1) + 0.5*v_i[0]*(pow(u_n,2)+pow(u_p,2));
+      }
+      else {assert(false);}
+      return res;
+    }
 
     // Fall through -- per-element BC
     // Choose element based on flag value
@@ -148,35 +194,43 @@ private:
     if (j==0) {
       // Top corner
       if (i==0)
-        return bc_helper(left_b_[i],left_[i],value(i+1,j+1));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         value(i+1,j+1));
       // Bottom corner
       else if (i==n_-1)
-        return bc_helper(left_b_[i],left_[i],value(i-1,j+1));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         value(i-1,j+1));
       // Side wall
       else
-        return bc_helper(left_b_[i],left_[i],value(i,j+1));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         value(i,j+1));
     }
     // Right Boundary
     else if (j==m_-1) {
       // Top corner
       if (i==0)
-        return bc_helper(left_b_[i],left_[i],value(i+1,j-1));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         value(i+1,j-1));
       // Bottom corner
       else if (i==n_-1)
-        return bc_helper(left_b_[i],left_[i],value(i-1,j-1));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         value(i-1,j-1));
       // Side wall
       else
-        return bc_helper(right_b_[i],right_[i],value(i,j-1));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         value(i,j-1));
     }
     // Top Boundary
     else if (i==0) {
       // return top_[j-1];
-      return bc_helper(top_b_[i],top_[i],value(i+1,j));
+      return bc_helper(top_b_[i],top_[i],top_n_[i],
+                       value(i+1,j));
     }
     // Bot Boundary
     else if (i==n_-1) {
       // return bot_[j-1];
-      return bc_helper(bot_b_[i],bot_[i],value(i-1,j));
+      return bc_helper(bot_b_[i],bot_[i],bot_n_[i],
+                       value(i-1,j));
     }
     // Interior point
     else {
@@ -242,35 +296,43 @@ private:
     if (j==0) {
       // Top corner
       if (i==0)
-        return bc_helper(left_b_[i],left_[i],stage_value(i+1,j+1,ind));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         stage_value(i+1,j+1,ind));
       // Bottom corner
       else if (i==n_-1)
-        return bc_helper(left_b_[i],left_[i],stage_value(i-1,j+1,ind));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         stage_value(i-1,j+1,ind));
       // Side wall
       else
-        return bc_helper(left_b_[i],left_[i],stage_value(i,j+1,ind));
+        return bc_helper(left_b_[i],left_[i],left_n_[i],
+                         stage_value(i,j+1,ind));
     }
     // Right Boundary
     else if (j==m_-1) {
       // Top corner
       if (i==0)
-        return bc_helper(left_b_[i],left_[i],stage_value(i+1,j-1,ind));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         stage_value(i+1,j-1,ind));
       // Bottom corner
       else if (i==n_-1)
-        return bc_helper(left_b_[i],left_[i],stage_value(i-1,j-1,ind));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         stage_value(i-1,j-1,ind));
       // Side wall
       else
-        return bc_helper(right_b_[i],right_[i],stage_value(i,j-1,ind));
+        return bc_helper(right_b_[i],right_[i],right_n_[i],
+                         stage_value(i,j-1,ind));
     }
     // Top Boundary
     else if (i==0) {
       // return top_[j-1];
-      return bc_helper(top_b_[i],top_[i],stage_value(i+1,j,ind));
+      return bc_helper(top_b_[i],top_[i],top_n_[i],
+                       stage_value(i+1,j,ind));
     }
     // Bot Boundary
     else if (i==n_-1) {
       // return bot_[j-1];
-      return bc_helper(bot_b_[i],bot_[i],stage_value(i-1,j,ind));
+      return bc_helper(bot_b_[i],bot_[i],bot_n_[i],
+                       stage_value(i-1,j,ind));
     }
     // Interior point
     else {
@@ -436,14 +498,15 @@ public:
     top_n_.resize(top_b_.size());
     bot_n_.resize(bot_b_.size());
 
+    // 
     std::fill(left_n_.begin(),left_n_.end(),  
-              value_type({0.0,-1.0,0.0,0.0}));
+              value_type({-1.0,+0.0,+0.0,+1.0}));
     std::fill(right_n_.begin(),right_n_.end(),
-              value_type({0.0,+1.0,0.0,0.0}));
+              value_type({+1.0,+0.0,+0.0,-1.0}));
     std::fill(top_n_.begin(),top_n_.end(),    
-              value_type({0.0,0.0,+1.0,0.0}));
+              value_type({+0.0,+1.0,+1.0,+0.0}));
     std::fill(bot_n_.begin(),bot_n_.end(),    
-              value_type({0.0,0.0,-1.0,0.0}));
+              value_type({+0.0,-1.0,-1.0,+0.0}));
   }
   // 
   // STAGE HANDLING FUNCTIONS
