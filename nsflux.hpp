@@ -8,68 +8,11 @@
 #include <iostream>   // debug
 #include <cmath>      // pow()
 #include <valarray>   // std::valarray, std::begin, std::end
+#include <functional>   // std::function
+
+#include "gas_dynamics.hpp" // gas dynamics equations
 
 using size_type = unsigned;
-
-// float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
-float C1 = 1.458e-6; // Sutherland's law C_1
-float S  = 110.4;    // Sutherland's law S
-float Cp = 1.005e3;  // Isobaric specific heat capacity of air @ 300K
-float Pr = 0.713;    // Prandtl number of air @ 300K
-float R  = 287.058;  // Ideal gas constant of air
-float K  = 0.0271;   // Thermal conductivity of air @ 300 K
-
-// 
-// STATE HELPER FUNCTORS
-// 
-/* Pressure */ 
-struct pf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    return (gam-1)*(w[3]-(pow(w[1],2)+pow(w[2],2))/(2*w[0]));
-  }
-};
-
-/* Temperature */
-struct Tf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    return pf(w)/w[0]/R;
-  }
-};
-
-/* Horizontal velocity */
-struct uf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    return w[1]/w[0];
-  }
-};
-
-/* Vertical velocity */
-struct vf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    return w[2]/w[0];
-  }
-};
-
-/* Speed of sound */
-struct cf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    return sqrt( gam*pf(w)/w[0] );
-  }
-};
-
-/* Viscosity */
-struct muf {
-  template <typename Value>
-  float operator()(const Value& w) {
-    Tf T;
-    return C1*pow(T(w),1.5) / (T(w)+S);
-  }
-};
 
 // 
 // DUAL GRID DERIVATIVES
@@ -87,7 +30,7 @@ typename Cell::CellScalar df_dx_r(Cell c, Fcn f) {
           f(c.value(1,1)) - f(c.value(0,1))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_l(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper left
@@ -98,7 +41,7 @@ typename Cell::CellScalar df_dx_l(Cell c, Fcn f) {
           f(c.value(0,1)) - f(c.value(-1,1))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_t(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper right
@@ -106,7 +49,7 @@ typename Cell::CellScalar df_dx_t(Cell c, Fcn f) {
           f(c.value(1,0)) - f(c.value(-1,0))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_b(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper left
@@ -117,7 +60,7 @@ typename Cell::CellScalar df_dx_b(Cell c, Fcn f) {
 
 /* --- VERTICAL DERIVATIVES --- */
 /* --- du_dy --- */
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_t(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper right
@@ -128,7 +71,7 @@ typename Cell::CellScalar df_dy_t(Cell c, Fcn f) {
           f(c.value(-1,-1)) - f(c.value(-1,0))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_b(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Bottom right
@@ -139,14 +82,14 @@ typename Cell::CellScalar df_dy_b(Cell c, Fcn f) {
           f(c.value(-1,0)) - f(c.value(-1,1))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_l(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
           f(c.value(-1,-1)) - f(c.value(-1,1)) + 
           f(c.value(0,-1)) - f(c.value(0,1))
         );
 }
-template <typename Cell, typename Fcn>
+template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_r(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
           f(c.value(1,-1)) - f(c.value(1,1)) + 
@@ -159,61 +102,69 @@ typename Cell::CellScalar df_dy_r(Cell c, Fcn f) {
 // 
 template <typename Cell>
 typename Cell::CellScalar tau_xx_r(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_r(c,uf()) - 
-          typename Cell::CellScalar(1.5)*df_dy_r(c,vf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_r(c,u) - 
+          typename Cell::CellScalar(1.5)*df_dy_r(c,v));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xx_l(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_l(c,uf()) - 
-          typename Cell::CellScalar(1.5)*df_dy_l(c,vf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_l(c,u) - 
+          typename Cell::CellScalar(1.5)*df_dy_l(c,v));
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_yy_t(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dy_t(c,vf()) - 
-          typename Cell::CellScalar(1.5)*df_dx_t(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dy_t(c,v) - 
+          typename Cell::CellScalar(1.5)*df_dx_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_yy_b(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dy_b(c,vf()) - 
-          typename Cell::CellScalar(1.5)*df_dx_b(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dy_b(c,v) - 
+          typename Cell::CellScalar(1.5)*df_dx_b(c,u));
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_xy_r(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_r(c,vf()) - 
-          typename Cell::CellScalar(0.5)*df_dy_r(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_r(c,v) - 
+          typename Cell::CellScalar(0.5)*df_dy_r(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_l(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_l(c,vf()) - 
-          typename Cell::CellScalar(0.5)*df_dy_l(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_l(c,v) - 
+          typename Cell::CellScalar(0.5)*df_dy_l(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_t(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_t(c,vf()) - 
-          typename Cell::CellScalar(0.5)*df_dy_t(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_t(c,v) - 
+          typename Cell::CellScalar(0.5)*df_dy_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_b(Cell c) {
-  muf mu;
-  return typename Cell::CellScalar(mu(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_b(c,vf()) - 
-          typename Cell::CellScalar(0.5)*df_dy_b(c,uf()));
+  auto u = [](typename Cell::CellValue val) { return uf(val); };
+  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  return typename Cell::CellScalar(muf(c.value())) * (
+          typename Cell::CellScalar(0.5)*df_dx_b(c,v) - 
+          typename Cell::CellScalar(0.5)*df_dy_b(c,u));
 }
 
 /** Horizontal flux
@@ -262,16 +213,16 @@ typename Cell::CellScalar tau_xy_b(Cell c) {
 template <typename Cell>
 typename Cell::CellValue fv(Cell c) {
   typename Cell::CellValue res(c.value().size()); // reserve some space
-  uf u; vf v;
   typename Cell::CellScalar ks = typename Cell::CellScalar(K);
-
+  // resolve typenames with lambda function
+  auto fcn = [](typename Cell::CellValue var) { return Tf(var); };
   res[0] = 0;
   res[1] = tau_xx_r(c) - tau_xx_l(c);
   res[2] = tau_xy_r(c) - tau_xy_l(c);
   // I'm using the cell velocity, rather than an average here -- is this OK?
-  res[3] = tau_xx_r(c)*u(c.value()) - tau_xx_l(c)*u(c.value()) + 
-           tau_xy_r(c)*v(c.value()) - tau_xy_l(c)*v(c.value()) - 
-           ks*df_dx_r(c,Tf()) + ks*df_dx_l(c,Tf());
+  res[3] = tau_xx_r(c)*uf(c.value()) - tau_xx_l(c)*uf(c.value()) + 
+           tau_xy_r(c)*vf(c.value()) - tau_xy_l(c)*vf(c.value()) - 
+           ks*df_dx_r(c,fcn) + ks*df_dx_l(c,fcn);
 
   return res;
 }
@@ -281,16 +232,16 @@ typename Cell::CellValue fv(Cell c) {
 template <typename Cell>
 typename Cell::CellValue gv(Cell c) {
   typename Cell::CellValue res(c.value().size()); // reserve some space
-  uf u; vf v;
   typename Cell::CellScalar ks = typename Cell::CellScalar(K);
-
+  // resolve typenames with lambda function
+  auto fcn = [](typename Cell::CellValue var) { return Tf(var); };
   res[0] = 0;
   res[1] = tau_xy_t(c) - tau_xy_b(c);
   res[2] = tau_yy_t(c) - tau_yy_b(c);
   // I'm using the cell velocity, rather than an average here -- is this OK?
-  res[3] = tau_yy_t(c)*v(c.value()) - tau_yy_b(c)*v(c.value()) + 
-           tau_xy_t(c)*u(c.value()) - tau_xy_b(c)*u(c.value()) - 
-           ks*df_dy_t(c,Tf()) + ks*df_dy_b(c,Tf());
+  res[3] = tau_yy_t(c)*vf(c.value()) - tau_yy_b(c)*vf(c.value()) + 
+           tau_xy_t(c)*uf(c.value()) - tau_xy_b(c)*uf(c.value()) - 
+           ks*df_dy_t(c,fcn) + ks*df_dy_b(c,fcn);
 
   return res;
 }

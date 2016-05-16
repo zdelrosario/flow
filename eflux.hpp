@@ -9,29 +9,11 @@
 #include <cmath>      // pow()
 #include <valarray>   // std::valarray, std::begin, std::end
 
+#include "gas_dynamics.hpp" // gas dynamics equations
+
 using size_type = unsigned;
 
-float gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
-float eps = 0.25;
-
-// 
-// VECTOR HELPER FUNCTIONS
-// 
-/** Pressure
- * @brief Calculates the pressure based on a state vector
- */ 
-template <typename Value>
-float pf(const Value& w) {
-  return (gam-1)*(w[3]-(pow(w[1],2)+pow(w[2],2))/(2*w[0]));
-}
-
-/** Speed of sound
- * @brief Calculates the local speed of sound based on a state vector
- */
-template <typename Value>
-float cf(const Value& w) {
-  return sqrt( gam*pf(w)/w[0] );
-}
+float eps = 0.25;  // artificial dissipation constant
 
 /** Horizontal Wave Speed
  */
