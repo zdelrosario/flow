@@ -8,6 +8,7 @@ void rk4(S h, A access) {
   value y = {0,0,0,0};   value f = {0,0,0,0};
   value k1 = {0,0,0,0};  value k2 = {0,0,0,0};
   value k3 = {0,0,0,0};  value k4 = {0,0,0,0};
+  
   // Stage 1
   eflux(access.cell_begin(),access.cell_end(),access.cell_begin(0));
   nsflux(access.cell_begin(),access.cell_end(),access.cell_begin(0));
@@ -22,8 +23,7 @@ void rk4(S h, A access) {
     ++flux_it;
     ++out_it;
   }
-// std::cout << "Result of stage 1" << std::endl;
-// val(i,j,4).print(); std::cout<<std::endl;
+
   // Stage 2
   eflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(1));
   nsflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(1));
@@ -38,8 +38,7 @@ void rk4(S h, A access) {
     ++flux_it;
     ++out_it;
   }
-// std::cout << "Result of stage 2" << std::endl;
-// val(i,j,4).print(); std::cout<<std::endl;
+
   // Stage 3
   eflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(2));
   nsflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(2));
@@ -54,11 +53,12 @@ void rk4(S h, A access) {
     ++flux_it;
     ++out_it;
   }
-// std::cout << "Result of stage 3" << std::endl;
-// val(i,j,4).print(); std::cout<<std::endl;
+
   // Stage 4
   eflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(3));
   nsflux(access.cell_begin(4),access.cell_end(4),access.cell_begin(3));
+
+  // Add all stages
   auto k1_it = access.cell_begin(0);
   auto k2_it = access.cell_begin(1);
   auto k3_it = access.cell_begin(2);

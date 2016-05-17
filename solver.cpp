@@ -109,9 +109,9 @@ int main() {
   rk4(h,val);
 
   // DEBUG -- Check the results of Euler flux
-  // size_type i=34,j=1; // Bottom left
+  size_type i=34,j=1; // Bottom left
   // size_type i=1,j=1; // Top left
-  size_type i=34,j=1+buf; // Plate front
+  // size_type i=34,j=1+buf; // Plate front
 
   std::cout << "end of RK step" << std::endl;
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
