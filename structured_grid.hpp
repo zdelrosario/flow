@@ -59,11 +59,12 @@ private:
   std::vector<value_type> top_n_;   // Top boundary [normal,parallel]
   std::vector<value_type> bot_n_;   // Bot boundary [normal,parallel]
   // Freestream properties
-  scalar_type rho_inf;  // freestream density
-  scalar_type p_inf;    // freestream pressure
-  scalar_type u_inf;    // freestream horizontal velocity
-  scalar_type v_inf;    // freestream vertical velocity
-  scalar_type p_e;      // exit pressure
+  // DEBUG -- fix freestream conditions
+  scalar_type rho_inf = 1.1462;
+  scalar_type p_inf = 9.725e4;  // same as exit???
+  scalar_type u_inf = 68.93;    // 
+  scalar_type v_inf = 0.0;      // 
+  scalar_type p_e = 9.725e4;    // 
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
@@ -119,14 +120,15 @@ private:
     // Apply full-state BC
     if (bc_type!=0) {
       // Project velocity
-      scalar_type u_n,u_p;
+      scalar_type u_n,u_p,U_inf,V_inf;
       proj_vel(v_i,n,u_n,u_p);
+      proj_vel(value_type({rho_inf,rho_inf*u_inf,rho_inf*v_inf,0}),n,U_inf,V_inf);
 
       // Inflow
       if (bc_type==3) {
         // Compute Riemann invariants
         scalar_type c_o = sqrt(gam*p_inf/rho_inf);
-        scalar_type u_o = u_inf;
+        scalar_type u_o = U_inf;
         scalar_type c_i = cf(v_i);
         scalar_type R_p = u_o + 2*c_o / (gam-1);
         scalar_type R_m = u_n - 2*c_i / (gam-1);
@@ -143,7 +145,7 @@ private:
       else if (bc_type==4) {
         // Compute Riemann invariants
         scalar_type c_o = sqrt(gam*p_e/v_i[0]);
-        scalar_type u_o = u_inf;
+        scalar_type u_o = U_inf;
         scalar_type c_i = cf(v_i);
         scalar_type R_p = u_n + 2*c_i / (gam-1);
         scalar_type R_m = u_o - 2*c_o / (gam-1);
@@ -442,12 +444,6 @@ public:
                  std::vector<flag_type>& right_b,
                  std::vector<flag_type>& top_b,
                  std::vector<flag_type>& bot_b) {
-    // DEBUG -- set freestream conditions
-    scalar_type rho_inf = 1.1462;
-    scalar_type p_inf = 9.725e4;  // same as exit???
-    scalar_type u_inf = 68.93;    // 
-    scalar_type v_inf = 0.0;      // 
-    scalar_type p_e = 9.725e4;    // 
     // Copy grid dimensions
     n_ = n; m_ = m;
     // Copy interior cell values

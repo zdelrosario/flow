@@ -73,7 +73,7 @@ int main() {
   std::vector<flag> right_b(Nt,B_out);  // Subsonic outlet
   std::vector<flag> top_b(Mt-2,B_out);  // Subsonic outlet
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
-  for (unsigned i=0; i<buf; ++i) {      // Freestream mirror
+  for (int i=0; i<buf; ++i) {      // Freestream mirror
     bot_b[i] = B_mir;
     bot_b[Mt-3-i] = B_mir;
   }
@@ -84,7 +84,19 @@ int main() {
   auto val = grid.access();
 
   // DEBUG -- Check bc handling
-  // val(35,37).print(); std::cout<<std::endl;
+  // std::cout<<"(1,1):"<<std::endl;
+  // val(1,1).print(); std::cout<<std::endl;
+  // std::cout<<"(1,0):"<<std::endl;
+  // val(1,0).print(); std::cout<<std::endl;
+  // std::cout<<"(0,1):"<<std::endl;
+  // val(0,1).print(); std::cout<<std::endl;
+
+  // std::cout<<"(34,1):"<<std::endl;
+  // val(34,1).print(); std::cout<<std::endl;
+  // std::cout<<"(34,0):"<<std::endl;
+  // val(34,0).print(); std::cout<<std::endl;
+  // std::cout<<"(35,1):"<<std::endl;
+  // val(35,1).print(); std::cout<<std::endl;
 
   // DEBUG -- Check access of RK stages
   // val(1,1,4).print(); std::cout<<std::endl;
