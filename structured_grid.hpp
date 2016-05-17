@@ -580,28 +580,6 @@ public:
         grid_->print_state(grid_->stage_value(i_,j_,ind_));
     }
   };
-  /** @class StructuredGrid::Access
-   *  @brief Lightweight proxy object for accessing grid data
-   */
-  class Access {
-    // Allow StructuredGrid to access this object
-    friend class StructuredGrid;
-    // Pointer back to grid
-    StructuredGrid* grid_;
-    // Private constructor
-    Access(const StructuredGrid* grid)
-        : grid_(const_cast<StructuredGrid*>(grid)) {}
-    // Public Member functions
-  public:
-    Proxy operator()(size_type i, size_type j, short ind=-1) {
-      return Proxy(i,j,grid_,ind);
-    }
-  };
-  
-  // Return access object
-  Access access() {
-    return Access(this);
-  }
   /** @class StructuredGrid::Cell
    *  @brief Proxy object for a gkrid cell
    * 
@@ -749,6 +727,39 @@ public:
   }
   CellIterator cell_end(short id=-1) const {
     return CellIterator(this,v_.size(),id);
+  }
+  /** @class StructuredGrid::Access
+   *  @brief Lightweight proxy object for accessing grid data
+   */
+  class Access {
+    // Allow StructuredGrid to access this object
+    friend class StructuredGrid;
+    // Pointer back to grid
+    StructuredGrid* grid_;
+    // Private constructor
+    Access(const StructuredGrid* grid)
+        : grid_(const_cast<StructuredGrid*>(grid)) {}
+    // Public Member functions
+  public:
+    // Types
+    typedef value_type GridValue;
+    typedef scalar_type GridScalar;
+    // Return cell value
+    Proxy operator()(size_type i, size_type j, short ind=-1) {
+      return Proxy(i,j,grid_,ind);
+    }
+    // Return cell iterator
+    StructuredGrid::CellIterator cell_begin(short id=-1) const {
+      return grid_->cell_begin(id);
+    }
+    StructuredGrid::CellIterator cell_end(short id=-1) const {
+      return grid_->cell_end(id);
+    }
+  };
+  
+  // Return access object
+  Access access() {
+    return Access(this);
   }
 
   // 

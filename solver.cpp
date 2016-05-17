@@ -2,6 +2,7 @@
 #include "grid_mapping.hpp"
 #include "eflux.hpp"
 #include "nsflux.hpp"
+#include "rk4_viscous.hpp"
 
 #include <iostream>   // std::cout, std::endl
 #include <array>      // std::array
@@ -39,7 +40,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  scalar     h = 1e-6;       // time step
+  scalar     h = 1e-8;       // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
   // Discretization parameters
@@ -105,84 +106,13 @@ int main() {
   grid.fill_stages({0,0,0,0}); // Zero out the RK stages
 
   // DEBUG -- single iteration of RK
+  rk4(h,val);
+
+  // DEBUG -- Check the results of Euler flux
   // size_type i=34,j=1; // Bottom left
   // size_type i=1,j=1; // Top left
   size_type i=34,j=1+buf; // Plate front
-  value y = {0,0,0,0};   value f = {0,0,0,0};
-  value k1 = {0,0,0,0};  value k2 = {0,0,0,0};
-  value k3 = {0,0,0,0};  value k4 = {0,0,0,0};
-  // Stage 1
-  eflux(grid.cell_begin(),grid.cell_end(),grid.cell_begin(0));
-  nsflux(grid.cell_begin(),grid.cell_end(),grid.cell_begin(0));
-  auto flux_it = grid.cell_begin(0);
-  auto  out_it = grid.cell_begin(4);
-  for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
-    // Apply RK stage
-    y = (*it).value();
-    f = (*flux_it).value();
-    (*out_it) = y + scalar(0.5)*h*f;
-    // Iterate
-    ++flux_it;
-    ++out_it;
-  }
-std::cout << "Result of stage 1" << std::endl;
-val(i,j,4).print(); std::cout<<std::endl;
-  // Stage 2
-  eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(1));
-  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(1));
-  flux_it = grid.cell_begin(1);
-   out_it = grid.cell_begin(4);
-  for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
-    // Apply RK stage
-    y = (*it).value();
-    f = (*flux_it).value();
-    (*out_it) = y + scalar(0.5)*h*f;
-    // Iterate
-    ++flux_it;
-    ++out_it;
-  }
-std::cout << "Result of stage 2" << std::endl;
-val(i,j,4).print(); std::cout<<std::endl;
-  // Stage 3
-  eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(2));
-  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(2));
-  flux_it = grid.cell_begin(2);
-   out_it = grid.cell_begin(4);
-  for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
-    // Apply RK stage
-    y = (*it).value();
-    f = (*flux_it).value();
-    (*out_it) = y + h*f;
-    // Iterate
-    ++flux_it;
-    ++out_it;
-  }
-std::cout << "Result of stage 3" << std::endl;
-val(i,j,4).print(); std::cout<<std::endl;
-  // Stage 4
-  eflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(3));
-  nsflux(grid.cell_begin(4),grid.cell_end(4),grid.cell_begin(3));
-  auto k1_it = grid.cell_begin(0);
-  auto k2_it = grid.cell_begin(1);
-  auto k3_it = grid.cell_begin(2);
-  auto k4_it = grid.cell_begin(3);
-  out_it = grid.cell_begin(4); // DEBUG -- should write to (-1)
-  for (auto it=grid.cell_begin(); it!=grid.cell_end(); ++it) {
-    // Apply RK stage
-    y  = (*it).value();
-    k1 = (*k1_it).value();    k2 = (*k2_it).value();
-    k3 = (*k3_it).value();    k4 = (*k4_it).value();
-    (*out_it) = y + h/scalar(6.0)*(k1+scalar(2)*k2+scalar(2)*k3+k4);
-    // Iterate
-    ++flux_it;
-    ++out_it;
-    ++k1_it;
-    ++k2_it;
-    ++k3_it;
-    ++k4_it;
-  }
 
-  // DEBUG -- Check the results of Euler flux
   std::cout << "end of RK step" << std::endl;
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
   std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
@@ -192,7 +122,7 @@ val(i,j,4).print(); std::cout<<std::endl;
   std::cout<<"y(t=h)="; val(i,j,4).print(); std::cout<<std::endl; // y(t=h)
 
   /* --- FILE OUTPUT --- */
-  grid.write_grid("solution.grid.dat");      // grid points
+  grid.write_grid("solution.grid.dat");   // grid points
   grid.write_values("solution.val.dat");  // cell values
 
   return 0;
