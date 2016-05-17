@@ -105,8 +105,9 @@ int main() {
   grid.fill_stages({0,0,0,0}); // Zero out the RK stages
 
   // DEBUG -- single iteration of RK
-  size_type i=34,j=1; // Bottom left
+  // size_type i=34,j=1; // Bottom left
   // size_type i=1,j=1; // Top left
+  size_type i=34,j=1+buf; // Plate front
   value y = {0,0,0,0};   value f = {0,0,0,0};
   value k1 = {0,0,0,0};  value k2 = {0,0,0,0};
   value k3 = {0,0,0,0};  value k4 = {0,0,0,0};
@@ -175,6 +176,10 @@ val(i,j,4).print(); std::cout<<std::endl;
     // Iterate
     ++flux_it;
     ++out_it;
+    ++k1_it;
+    ++k2_it;
+    ++k3_it;
+    ++k4_it;
   }
 
   // DEBUG -- Check the results of Euler flux
