@@ -3,8 +3,6 @@
 
 /** Structured Grid code
  *  TODO:
- *    - Add cell normals
- *    - Add BC's: inflow, outflow, wall, symmetry
  */
 
 #include <vector>     // data handling
@@ -585,8 +583,10 @@ public:
     size_type i_,j_;
     short ind_;
     // Private constructor
-    Cell(const StructuredGrid* grid, size_type i, size_type j, short ind=-1)
-        : grid_(const_cast<StructuredGrid*>(grid)), i_(i), j_(j), ind_(ind) {}
+    Cell(const StructuredGrid* grid, size_type i, 
+         size_type j, short ind=-1)
+        : grid_(const_cast<StructuredGrid*>(grid)), 
+          i_(i), j_(j), ind_(ind) {}
   public:
     // Public types
     typedef value_type CellValue;

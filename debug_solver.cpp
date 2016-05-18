@@ -9,7 +9,7 @@
 #include <valarray>   // std::valarray, std::begin, std::end
 #include <algorithm>  // std::transform
 
-using scalar = float;             // Specify solver precision
+using scalar = double;             // Specify solver precision
 
 using coord = std::array<scalar,2>; // Grid coordinates
 using value = std::valarray<scalar>;// State vector
@@ -49,10 +49,6 @@ int main() {
   scalar rho_inf = 1.1462;
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
-  // Time integration parameters
-  scalar     h = 1e-8;       // time step
-  // size_type iter_max = 1e3; // max iterations
-  // size_type n = 0;          // current iterations
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -100,12 +96,12 @@ int main() {
   // }
 
   // DEBUG -- Check bc handling
-  // std::cout<<"(1,1):"<<std::endl;
-  // val(1,1).print(); std::cout<<std::endl;
-  // std::cout<<"(1,0):"<<std::endl;
-  // val(1,0).print(); std::cout<<std::endl;
-  // std::cout<<"(0,1):"<<std::endl;
-  // val(0,1).print(); std::cout<<std::endl;
+  std::cout<<"(1,1):"<<std::endl;
+  val(1,1).print(); std::cout<<std::endl;
+  std::cout<<"(1,0):"<<std::endl;
+  val(1,0).print(); std::cout<<std::endl;
+  std::cout<<"(0,1):"<<std::endl;
+  val(0,1).print(); std::cout<<std::endl;
 
   // std::cout<<"(34,1):"<<std::endl;
   // val(34,1).print(); std::cout<<std::endl;
@@ -133,15 +129,15 @@ int main() {
   // DEBUG -- single iteration of RK
 
     // DEBUG -- Check the results of Euler flux
-  size_type i=34,j=1; // Bottom left
+  // size_type i=34,j=1; // Bottom left
   // size_type i=1,j=1; // Top left
   // size_type i=2,j=2; // Interior
-  // size_type i=34,j=1+buf; // Plate front
+  size_type i=34,j=1+buf; // Plate front
 
   std::cout << "i="<<i<<",j="<<j<<std::endl;
   std::cout << "end of RK step" << std::endl;
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
-  rk4(h,val);
+  rk4(val);
   std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
   std::cout<<"k2=";     val(i,j,1).print(); std::cout<<std::endl; // k2
   std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3

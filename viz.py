@@ -2,6 +2,9 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
+d = 0.01
+e = 1e-5
+
 # Command line argument form
 # if len(sys.argv) < 2:
 #     print('Usage:')
@@ -31,7 +34,7 @@ for line in f:
 Xm = np.reshape(X,(n,m))
 Ym = np.reshape(Y,(n,m))
 
-d = X[1]-X[0]
+
 
 # Find midpoints of cells
 Xs = []; Ys = []
@@ -39,6 +42,8 @@ for ii in range(n-1):
     for jj in range(m-1):
         Xs.append( np.mean([Xm[ii][jj],Xm[ii+1][jj],Xm[ii][jj+1],Xm[ii+1][jj+1]]))
         Ys.append( np.mean([Ym[ii][jj],Ym[ii+1][jj],Ym[ii][jj+1],Ym[ii+1][jj+1]]))
+Xs = np.reshape(np.array(Xs),(-1,m-1))
+Ys = np.reshape(np.array(Ys),(-1,m-1))
 
 # Import solution
 f = open(sol_file,'r')
@@ -51,10 +56,14 @@ for line in f:
         W2.append(float(val[1]))
         W3.append(float(val[2]))
         W4.append(float(val[3]))
-
-# Post process
+# Velocities
 U = [W2[i]/W1[i] for i in range(len(W1))]
 V = [W3[i]/W1[i] for i in range(len(W1))]
+
+W1 = np.reshape(np.array(W1),(-1,m-1))
+W2 = np.reshape(np.array(W2),(-1,m-1))
+W3 = np.reshape(np.array(W3),(-1,m-1))
+W4 = np.reshape(np.array(W4),(-1,m-1))
 
 # Plot Gridpoints
 # fig = plt.figure()
@@ -63,7 +72,24 @@ V = [W3[i]/W1[i] for i in range(len(W1))]
 # plt.ylim([min(Y)-d,max(Y)+d])
 # plt.show()
 
-# Plot Cells
+# Global View
+# fig = plt.figure()
+# # Interior grid lines
+# for ii in range(n-1):
+#     for jj in range(m-1):
+#         plt.plot([Xm[ii][jj],Xm[ii+1][jj]],[Ym[ii][jj],Ym[ii+1][jj]],'k-')
+#         plt.plot([Xm[ii][jj],Xm[ii][jj+1]],[Ym[ii][jj],Ym[ii][jj+1]],'k-')
+# # Right and bottom grid line
+# plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
+# plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
+# # Velocity contour
+# cs = plt.contourf(Xs,Ys,W2)
+# plt.colorbar(cs)
+# # Axis limits
+# plt.xlim([min(X)-d,max(X)+d])
+# plt.ylim([min(Y)-d,max(Y)+d])
+
+# Short View
 fig = plt.figure()
 # Interior grid lines
 for ii in range(n-1):
@@ -73,12 +99,16 @@ for ii in range(n-1):
 # Right and bottom grid line
 plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
 plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
+# Velocity contour
+cs = plt.contourf(Xs,Ys,W2,shading='flat')
+plt.colorbar(cs)
 # Axis limits
 plt.xlim([min(X)-d,max(X)+d])
-plt.ylim([min(Y)-d,max(Y)+d])
-plt.show()
+plt.ylim([-1e-5,e])
 
 # Plot velocity quiver
 # fig = plt.figure()
 # plt.quiver(Xs,Ys,U,V)
-# plt.show()
+
+# Show all plots
+plt.show()
