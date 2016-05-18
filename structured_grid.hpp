@@ -72,16 +72,11 @@ private:
    *
    * @param v Input state vector
    * @param n Normal against which to project
-   * @param u_n Variable to which to write normal speed
-   * @param u_p Variable to which to write parallel speed
    * 
-   * @post u_n = v^T n
-   * @post u_p = v^T s, where s^T n=0
+   * @return u_n Velocity projected on normal
    */
-  void proj_vel(const value_type& v, const value_type& n,
-                scalar_type& u_n, scalar_type& u_p) {
-    u_n = uf(v)*n[0] + vf(v)*n[1];
-    u_p = uf(v)*n[2] + vf(v)*n[3];
+  scalar_type proj_vel(const value_type& v, const value_type& n) {
+    return uf(v)*n[0] + vf(v)*n[1];
   }
   /** Boundary condition helper function
    * @brief Switches between neumann and dirichlet boundary
@@ -111,54 +106,46 @@ private:
     // Reserve some space
     value_type res; res.resize(f.size());
     
-    // Full-state BC
+    // Characteristic (Full-state) BC
     unsigned bc_type = 0;
     for (size_type i=0; i!=f.size(); ++i) {
       if ( (f[i]==3) or (f[i]==4) )
         bc_type = f[i];
     }
-    // Apply full-state BC
+    // Apply characteristic BC
     if (bc_type!=0) {
       // Project velocity
-      scalar_type u_n,u_p,U_inf,V_inf;
-      proj_vel(v_i,n,u_n,u_p);
-      proj_vel(value_type({rho_inf,rho_inf*u_inf,rho_inf*v_inf,0}),n,U_inf,V_inf);
+      scalar_type U_i,U_o;
+      U_i = proj_vel(v_i,n);
+      U_o = proj_vel(v_o,n);
+      // Compute Riemann invariants
+      scalar_type C_i = cf(v_i);
+      scalar_type C_o = cf(v_o);
+      scalar_type R_i = U_i+2.0/(gam-1)*C_i;
+      scalar_type R_o = U_o-2.0/(gam-1)*C_o;
+      scalar_type C_s = 0.25*(gam-1)*(R_i-R_o);
+      scalar_type U_s = 0.5*(R_i+R_o);
 
+      scalar_type s_inv, U_r, V_r;
       // Inflow
       if (bc_type==3) {
-        // Compute Riemann invariants
-        scalar_type c_o = sqrt(gam*p_inf/rho_inf);
-        scalar_type u_o = U_inf;
-        scalar_type c_i = cf(v_i);
-        scalar_type R_p = u_o + 2*c_o / (gam-1);
-        scalar_type R_m = u_n - 2*c_i / (gam-1);
-        // Compute values
-        u_n = 0.5*(R_p+R_m);
-        c_o = 0.25*(gam-1)*(R_p-R_m);
-        // Assign state values
-        res[0] = rho_inf;
-        res[1] = v_i[0]*(u_n*n[0] + u_p*n[2]);
-        res[2] = v_i[0]*(u_n*n[1] + u_p*n[3]);
-        res[3] = p_inf/(gam-1) + 0.5*rho_inf*(pow(u_n,2)+pow(u_p,2));
+        s_inv = pow(v_o[0],gam)/pf(v_o);
+        U_r = uf(v_o) + (U_s-U_o)*n[0];
+        V_r = vf(v_o) + (U_s-U_o)*n[1];
       }
       // Outflow
       else if (bc_type==4) {
-        // Compute Riemann invariants
-        scalar_type c_o = sqrt(gam*p_e/v_i[0]);
-        scalar_type u_o = U_inf;
-        scalar_type c_i = cf(v_i);
-        scalar_type R_p = u_n + 2*c_i / (gam-1);
-        scalar_type R_m = u_o - 2*c_o / (gam-1);
-        // Compute values
-        u_n = 0.5*(R_p+R_m);
-        c_o = 0.25*(gam-1)*(R_p-R_m);
-        // Assign state values
-        res[0] = v_i[0]; // density
-        res[1] = v_i[0]*(u_n*n[0] + u_p*n[2]);
-        res[2] = v_i[0]*(u_n*n[1] + u_p*n[3]);
-        res[3] = p_e/(gam-1) + 0.5*v_i[0]*(pow(u_n,2)+pow(u_p,2));
+        s_inv = pow(v_i[0],gam)/pf(v_i);
+        U_r = uf(v_i) + (U_s-U_i)*n[0];
+        V_r = vf(v_i) + (U_s-U_i)*n[1];
       }
       else {assert(false);}
+      // Use invariants to compute ghost state
+      res[0] = pow( s_inv*pow(C_s,2)/gam, 1/(gam-1) );
+      scalar_type P_r = res[0]*pow(C_s,2)/gam;
+      res[1] = res[0]*U_r;
+      res[2] = res[0]*V_r;
+      res[3] = P_r/(gam-1) + 0.5*res[0]*(pow(U_r,2)+pow(V_r,2));
       return res;
     }
 

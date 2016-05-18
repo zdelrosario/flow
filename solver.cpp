@@ -40,7 +40,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  scalar     h = 1e-8;       // time step
+  scalar     h = 1e-6;       // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
   // Discretization parameters
@@ -106,20 +106,21 @@ int main() {
   grid.fill_stages({0,0,0,0}); // Zero out the RK stages
 
   // DEBUG -- single iteration of RK
-  rk4(h,val);
 
-  // DEBUG -- Check the results of Euler flux
-  size_type i=34,j=1; // Bottom left
-  // size_type i=1,j=1; // Top left
+    // DEBUG -- Check the results of Euler flux
+  // size_type i=34,j=1; // Bottom left
+  size_type i=1,j=1; // Top left
   // size_type i=34,j=1+buf; // Plate front
 
+  std::cout << "i="<<i<<",j="<<j<<std::endl;
   std::cout << "end of RK step" << std::endl;
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
+  rk4(h,val);
   std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
   std::cout<<"k2=";     val(i,j,1).print(); std::cout<<std::endl; // k2
   std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3
   std::cout<<"k4=";     val(i,j,3).print(); std::cout<<std::endl; // k4
-  std::cout<<"y(t=h)="; val(i,j,4).print(); std::cout<<std::endl; // y(t=h)
+  std::cout<<"y(t=h)="; val(i,j).print(); std::cout<<std::endl; // y(t=h)
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points
