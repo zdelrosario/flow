@@ -4,8 +4,8 @@
 #
 
 # Executables to build
-# EXEC += test
 EXEC += solver
+EXEC += debug_solver
 
 # Get the shell name to determine the OS
 UNAME := $(shell uname)
