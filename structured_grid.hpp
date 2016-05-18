@@ -106,6 +106,12 @@ private:
     // Reserve some space
     value_type res; res.resize(f.size());
     
+    // DEBUG -- print flag
+    for (auto it=f.begin(); it!=f.end(); ++it) {
+      std::cout<<*it<<",";
+    }
+    std::cout<<std::endl;
+
     // Characteristic (Full-state) BC
     unsigned bc_type = 0;
     for (size_type i=0; i!=f.size(); ++i) {
@@ -212,13 +218,13 @@ private:
     // Top Boundary
     else if (i==0) {
       // return top_[j-1];
-      return bc_helper(top_b_[i],top_[i],top_n_[i],
+      return bc_helper(top_b_[j],top_[j],top_n_[j],
                        value(i+1,j));
     }
     // Bot Boundary
     else if (i==n_-1) {
       // return bot_[j-1];
-      return bc_helper(bot_b_[i],bot_[i],bot_n_[i],
+      return bc_helper(bot_b_[j],bot_[j],bot_n_[j],
                        value(i-1,j));
     }
     // Interior point
@@ -314,13 +320,13 @@ private:
     // Top Boundary
     else if (i==0) {
       // return top_[j-1];
-      return bc_helper(top_b_[i],top_[i],top_n_[i],
+      return bc_helper(top_b_[j],top_[j],top_n_[j],
                        stage_value(i+1,j,ind));
     }
     // Bot Boundary
     else if (i==n_-1) {
       // return bot_[j-1];
-      return bc_helper(bot_b_[i],bot_[i],bot_n_[i],
+      return bc_helper(bot_b_[j],bot_[j],bot_n_[j],
                        stage_value(i-1,j,ind));
     }
     // Interior point
