@@ -126,3 +126,4 @@ ENV/
 # Executables
 test
 solver
+debug_solver
