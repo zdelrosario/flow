@@ -63,7 +63,7 @@ void rk4(S h, A access) {
   auto k2_it = access.cell_begin(1);
   auto k3_it = access.cell_begin(2);
   auto k4_it = access.cell_begin(3);
-  out_it = access.cell_begin();
+   out_it = access.cell_begin();
   for (auto it=access.cell_begin(); it!=access.cell_end(); ++it) {
     // Apply RK stage
     y  = (*it).value();

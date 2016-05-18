@@ -31,6 +31,16 @@ void print_array(size_type n, size_type m, V v) {
   }
   return;
 }
+// DEBUG -- Print a vector
+template <typename V>
+void print_vector(V v) {
+  std::cout<<"(";
+  for (auto it=v.begin(); it+1!=v.end(); ++it) {
+    std::cout<<*it<<",";
+  }
+  std::cout<<v[v.size()-1]<<")"<<std::endl;
+  return;
+}
 
 int main() {
   /* --- SOLVER PARAMETERS --- */
@@ -40,7 +50,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  scalar     h = 1e-6;       // time step
+  scalar     h = 1e-8;       // time step
   // size_type iter_max = 1e3; // max iterations
   // size_type n = 0;          // current iterations
   // Discretization parameters
@@ -65,9 +75,9 @@ int main() {
   // Reserve space for cell values
   std::vector<value> V( Nt*Mt, U_inf );
   // Set dirichlet value on bottom
-  for (int j = 1; j<Mt; ++j) {
-    V[(Nt-1)*Mt+j] = U_wall;
-  }
+  // for (int j = 1; j<Mt; ++j) { // DEPRECIATED
+  //   V[(Nt-1)*Mt+j] = U_inf;
+  // }
 
   // Specify boundary condition flag vectors
   std::vector<flag> left_b(Nt,B_in);    // Subsonic inlet
@@ -84,6 +94,11 @@ int main() {
   GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
   auto val = grid.access();
 
+  // DEBUG -- Check bc flags
+  // for (auto it=bot_b.begin(); it!=bot_b.end(); ++it) {
+  //   print_vector(*it);
+  // }
+
   // DEBUG -- Check bc handling
   // std::cout<<"(1,1):"<<std::endl;
   // val(1,1).print(); std::cout<<std::endl;
@@ -98,6 +113,16 @@ int main() {
   // val(34,0).print(); std::cout<<std::endl;
   // std::cout<<"(35,1):"<<std::endl;
   // val(35,1).print(); std::cout<<std::endl;
+  // std::cout<<"(35,2):"<<std::endl;
+  // val(35,2).print(); std::cout<<std::endl;
+  // std::cout<<"(35,3):"<<std::endl;
+  // val(35,3).print(); std::cout<<std::endl;
+  // std::cout<<"(35,4):"<<std::endl;
+  // val(35,4).print(); std::cout<<std::endl;
+  // std::cout<<"(35,5):"<<std::endl;
+  // val(35,5).print(); std::cout<<std::endl;
+  // std::cout<<"(35,6):"<<std::endl;
+  // val(35,6).print(); std::cout<<std::endl;
 
   // DEBUG -- Check access of RK stages
   // val(1,1,4).print(); std::cout<<std::endl;
@@ -108,8 +133,9 @@ int main() {
   // DEBUG -- single iteration of RK
 
     // DEBUG -- Check the results of Euler flux
-  // size_type i=34,j=1; // Bottom left
-  size_type i=1,j=1; // Top left
+  size_type i=34,j=1; // Bottom left
+  // size_type i=1,j=1; // Top left
+  // size_type i=2,j=2; // Interior
   // size_type i=34,j=1+buf; // Plate front
 
   std::cout << "i="<<i<<",j="<<j<<std::endl;
