@@ -26,7 +26,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  size_type iter_max = 1e2; // max iterations
+  size_type iter_max = 1e4; // max iterations
   size_type n = 0;          // current iterations
   // Discretization parameters
   int Nt = 36; // Total vertical cells
