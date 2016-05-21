@@ -58,7 +58,7 @@ Value g(const Value& w) {
   // Calculate pressure
   float P = pf(w);
   // Calculate flux elements
-  out[0] = w[1];
+  out[0] = w[2];
   out[1] = w[1]*w[2]/w[0];
   out[2] = pow(w[2],2)/w[0] + P;
   out[3] = w[2]*(w[3]+P)/w[0];
@@ -85,26 +85,20 @@ typename Cell::CellValue dw_dy(Cell c) {
  */
 template <typename Cell>
 typename Cell::CellValue fj(Cell c) {
-  return typename Cell::CellScalar(0.5)*(
-            f(typename Cell::CellValue(c.value(1,0))) 
-          + f(typename Cell::CellValue(c.value()))      // physical flux
-          ) + typename Cell::CellScalar(-eps/2)*(       // average wave speed
-            wave_x(typename Cell::CellValue(c.value(1,0)))
-          + wave_x(typename Cell::CellValue(c.value()))
-          ) * dw_dx(c);   // state vector difference
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  return scalar(0.5)*( f(value(c.value(1,0))) + f(value(c.value())) ) 
+    + scalar(-eps/2) * ( wave_x(value(c.value(1,0))) + wave_x(value(c.value())) ) * dw_dx(c);
 }
 
 /** Jameson Vertical Flux
  */
 template <typename Cell>
 typename Cell::CellValue gj(Cell c) {
-  return typename Cell::CellScalar(0.5)*(
-            g(typename Cell::CellValue(c.value(0,-1))) 
-          + g(typename Cell::CellValue(c.value()))      // physical flux
-          ) + typename Cell::CellScalar(-eps/2)*(       // average wave speed
-            wave_y(typename Cell::CellValue(c.value(0,-1)))
-          + wave_y(typename Cell::CellValue(c.value()))
-          ) * dw_dy(c);   // state vector difference
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  return scalar(0.5)*( g(value(c.value(0,-1))) + g(value(c.value())) ) 
+    + scalar(-eps/2)*( wave_y(value(c.value(0,-1))) + wave_y(value(c.value())) ) * dw_dy(c);
 }
 
 // 
