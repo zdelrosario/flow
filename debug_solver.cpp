@@ -49,6 +49,8 @@ int main() {
   scalar rho_inf = 1.1462;
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
+  // Time integration parameters
+  scalar h = 1e-8;
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -137,7 +139,9 @@ int main() {
   std::cout << "i="<<i<<",j="<<j<<std::endl;
   std::cout << "end of RK step" << std::endl;
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
-  rk4(val);
+  scalar res;
+  // res = rk4(h,val); // Global timestep
+  res = rk4_local(val); // Local timestep
   std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
   std::cout<<"k2=";     val(i,j,1).print(); std::cout<<std::endl; // k2
   std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3

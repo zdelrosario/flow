@@ -1,8 +1,9 @@
-#include "structured_grid.hpp"
-#include "grid_mapping.hpp"
-#include "eflux.hpp"
-#include "nsflux.hpp"
-#include "rk4_viscous.hpp"
+#include "structured_grid.hpp"  // Grid/cell handling
+#include "grid_mapping.hpp"     // Grid generation
+#include "eflux.hpp"            // Euler fluxes
+#include "nsflux.hpp"           // Viscous fluxes
+#include "rk4_viscous.hpp"      // RK4 time integration
+#include "get_time.hpp"         // Code timing
 
 #include <iostream>   // std::cout, std::endl
 #include <array>      // std::array
@@ -11,8 +12,8 @@
 
 using scalar = double;             // Specify solver precision
 
-using coord = std::array<scalar,2>; // Grid coordinates
-using value = std::valarray<scalar>;// State vector
+using coord = std::array<scalar,2>;     // Grid coordinates
+using value = std::valarray<scalar>;    // State vector
 using flag  = std::array<unsigned,4>;   // Boundary condition flag
 
 typedef StructuredGrid<scalar,coord,value,flag> GridType;
@@ -21,13 +22,15 @@ typedef GridType::size_type size_type;
 int main() {
   /* --- SOLVER PARAMETERS --- */
   // Physical parameters
-  scalar u_inf   = 68.93;
-  scalar rho_inf = 1.1462;
-  scalar v_inf   = 0;
-  scalar e_inf   = 298537;
+  scalar u_inf   = 68.93;   // Horizontal velocity
+  scalar rho_inf = 1.1462;  // Density
+  scalar v_inf   = 0;       // Vertical velocity
+  scalar e_inf   = 298537;  // Internal energy
   // Time integration parameters
+  // scalar h = 1e-8;          // fixed timestep
   size_type iter_max = 1e4; // max iterations
   size_type n = 0;          // current iterations
+  size_type stride = 5e2;   // iteration stride for console printback
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -35,13 +38,12 @@ int main() {
   int buf = 4; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
-  std::vector<coord> X((Nt-1)*(Mt-1));    // Generate grid points for
+  std::vector<coord> X((Nt-1)*(Mt-1));      // Generate grid points for
   make_flat_plate((Nt-1),Nbl,(Mt-1),X,buf); // boundary layer simulation
 
   /* --- SET UP GRID --- */
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
-  value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
   // Boundary conditions
   flag B_wall = {1,2,2,1}; // Mirror momentum, neumann in density and energy
   flag B_in   = {3,3,3,3}; // Inlet condition
@@ -55,7 +57,8 @@ int main() {
   std::vector<flag> right_b(Nt,B_out);  // Subsonic outlet
   std::vector<flag> top_b(Mt-2,B_out);  // Subsonic outlet
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
-  for (int i=0; i<buf; ++i) {      // Freestream mirror
+  // Freestream mirror
+  for (int i=0; i<buf; ++i) {
     bot_b[i] = B_mir;
     bot_b[Mt-3-i] = B_mir;
   }
@@ -66,11 +69,23 @@ int main() {
   auto val = grid.access();
 
   /* --- RUN SOLVER --- */
-  while (n<iter_max) {
+  scalar res;
+  uint64 T_0 = GetTimeMs64();
+  uint64 T;
+  double dT;
+  while (n<=iter_max) {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
-    rk4(val);
+    // rk4(h,val); // Fixed timestep
+    res = rk4_local(val); // local CFL estimate
+    // Compute current time
+    T = GetTimeMs64();
+    dT = double(T-T_0)/1e3/60.; // minutes
+    // Print back residual, execution time
+    if (n % stride == 0) {
+      std::cout << "n=" << n << ", res=" << res << ", dT=" << dT << "min" << std::endl;
+    }
     // Iterate the counter
     ++n;
   }
