@@ -23,10 +23,10 @@ template <typename Cell, typename Fcn>
 typename Cell::CellScalar df_dx_r(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper right
-          f(c.value(1,0))  - f(c.value()) + 
+          f(c.value(1,0))  - f(c.value(0,0)) + 
           f(c.value(1,-1)) - f(c.value(0,-1)) +
         // Lower right
-          f(c.value(1,0)) - f(c.value()) + 
+          f(c.value(1,0)) - f(c.value(0,0)) + 
           f(c.value(1,1)) - f(c.value(0,1))
         );
 }
@@ -34,10 +34,10 @@ template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_l(Cell c, Fcn f) {
   return typename Cell::CellScalar(0.25)*(
         // Upper left
-          f(c.value())     - f(c.value(-1,0)) + 
+          f(c.value(0,0))  - f(c.value(-1,0)) + 
           f(c.value(0,-1)) - f(c.value(-1,-1)) + 
         // Lower left
-          f(c.value())    - f(c.value(-1,0)) + 
+          f(c.value(0,0)) - f(c.value(-1,0)) + 
           f(c.value(0,1)) - f(c.value(-1,1))
         );
 }
@@ -102,111 +102,70 @@ typename Cell::CellScalar df_dy_r(Cell c, Fcn f) {
 // 
 template <typename Cell>
 typename Cell::CellScalar tau_xx_r(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_r(c,u) - 
-          typename Cell::CellScalar(1.5)*df_dy_r(c,v));
+  return scalar(muf(c.value())) * (
+          scalar(0.5)*df_dx_r(c,u) - 
+          scalar(1.5)*df_dy_r(c,v) );
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xx_l(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_l(c,u) - 
-          typename Cell::CellScalar(1.5)*df_dy_l(c,v));
+  return scalar(muf(c.value())) * (
+          scalar(0.5)*df_dx_l(c,u) - 
+          scalar(1.5)*df_dy_l(c,v) );
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_yy_t(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dy_t(c,v) - 
-          typename Cell::CellScalar(1.5)*df_dx_t(c,u));
+  return scalar(muf(c.value())) * (
+          scalar(0.5)*df_dy_t(c,v) - 
+          scalar(1.5)*df_dx_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_yy_b(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dy_b(c,v) - 
-          typename Cell::CellScalar(1.5)*df_dx_b(c,u));
+  return scalar(muf(c.value())) * (
+          scalar(0.5)*df_dy_b(c,v) - 
+          scalar(1.5)*df_dx_b(c,u));
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_xy_r(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_r(c,v) - 
-          typename Cell::CellScalar(0.5)*df_dy_r(c,u));
+  return scalar(muf(c.value())) * (df_dx_r(c,v) - df_dy_r(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_l(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_l(c,v) - 
-          typename Cell::CellScalar(0.5)*df_dy_l(c,u));
+  return scalar(muf(c.value())) * (df_dx_l(c,v) - df_dy_l(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_t(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_t(c,v) - 
-          typename Cell::CellScalar(0.5)*df_dy_t(c,u));
+  return scalar(muf(c.value())) * (df_dx_t(c,v) - df_dy_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_b(Cell c) {
+  using scalar = typename Cell::CellScalar;
   auto u = [](typename Cell::CellValue val) { return uf(val); };
   auto v = [](typename Cell::CellValue val) { return vf(val); };
-  return typename Cell::CellScalar(muf(c.value())) * (
-          typename Cell::CellScalar(0.5)*df_dx_b(c,v) - 
-          typename Cell::CellScalar(0.5)*df_dy_b(c,u));
+  return scalar(muf(c.value())) * (df_dx_b(c,v) - df_dy_b(c,u));
 }
-
-/** Horizontal flux
- * @brief Calculates the physical horizontal flux based on a state vector
- * 
- * @param w   Input state vector
- */
-// template <typename Value>
-// Value f(const Value& w) {
-//   Value out; out.resize(w.size());
-//   // Calculate pressure
-//   float P = pf(w);
-//   // Calculate flux elements
-//   out[0] = w[1];
-//   out[1] = pow(w[1],2)/w[0]+P;
-//   out[2] = w[1]*w[2]/w[0];
-//   out[3] = w[1]*(w[3]+P)/w[0];
-//   return out;
-// }
-
-/** Vertical flux
- * @brief Calculates the physical vertical flux based on a state vector
- * 
- * @param w   Input state vector
- */
-
-
-// 
-// CELL HELPER FUNCTIONS
-// 
-/** Horizontal State Difference
- */
-// template <typename Cell>
-// typename Cell::CellValue dw_dx(Cell c) {
-//   return typename Cell::CellValue(c.value(1,0)) - typename Cell::CellValue(c.value());
-// }
-/** Vertical State Difference
- */
-// template <typename Cell>
-// typename Cell::CellValue dw_dy(Cell c) {
-//   return typename Cell::CellValue(c.value(0,1)) - typename Cell::CellValue(c.value());
-// }
 
 /** Viscous Horizontal Flux
  */
