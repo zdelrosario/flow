@@ -28,9 +28,10 @@ int main() {
   scalar e_inf   = 298537;  // Internal energy
   // Time integration parameters
   // scalar h = 1e-8;          // fixed timestep
-  size_type iter_max = 1e4; // max iterations
+  size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 5e2;   // iteration stride for console printback
+  scalar res_min = 1e-2; // minimum residual for convergence
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -69,11 +70,11 @@ int main() {
   auto val = grid.access();
 
   /* --- RUN SOLVER --- */
-  scalar res;
+  scalar res = 1e10;
   uint64 T_0 = GetTimeMs64();
   uint64 T;
   double dT;
-  while (n<=iter_max) {
+  while ((n<=iter_max) and (res>res_min)) {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
@@ -88,6 +89,12 @@ int main() {
     }
     // Iterate the counter
     ++n;
+  }
+  if (res <= res_min) {
+    std::cout << "Convergence tolerance reached!" << std::endl;
+  }
+  if (n >= iter_max) {
+    std::cout << "Iteration limit reached." << std::endl;
   }
   
   /* --- FILE OUTPUT --- */
