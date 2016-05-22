@@ -4,7 +4,7 @@
  */
 
 #include <vector>     // data handling
-#include <algorithm>  // std::copy(), std::transform()
+#include <algorithm>  // std::abs(), std::max()
 #include <iostream>   // debug
 #include <cmath>      // pow()
 #include <valarray>   // std::valarray, std::begin, std::end
@@ -81,6 +81,21 @@ typename Cell::CellValue dw_dy(Cell c) {
   return typename Cell::CellValue(c.value(0,-1)) - typename Cell::CellValue(c.value());
 }
 
+/** Horizontal Pressure Sensor
+ */
+template <typename Cell>
+typename Cell::CellScalar sx(Cell c) {
+  return std::abs( (pf(c.value(1,0))-2*pf(c.value())+pf(c.value(-1,0))) / 
+                   (pf(c.value(1,0))+2*pf(c.value())+pf(c.value(-1,0))) );
+}
+/** Vertical Pressure Sensor
+ */
+template <typename Cell>
+typename Cell::CellScalar sy(Cell c) {
+  return std::abs( (pf(c.value(0,1))-2*pf(c.value())+pf(c.value(0,-1))) / 
+                   (pf(c.value(0,1))+2*pf(c.value())+pf(c.value(0,-1))) );
+}
+
 /** Jameson Horizontal Flux
  */
 template <typename Cell>
@@ -88,7 +103,8 @@ typename Cell::CellValue fj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   return scalar(0.5)*( f(value(c.value(1,0))) + f(value(c.value())) ) 
-    + scalar(-eps/2)*( wave_x(value(c.value(1,0)))+wave_x(value(c.value())) ) 
+    + scalar(-eps/2)*sx(c)
+    *std::max( wave_x(value(c.value(1,0))),wave_x(value(c.value())) ) 
     * dw_dx(c);
 }
 
@@ -99,7 +115,8 @@ typename Cell::CellValue gj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   return scalar(0.5)*( g(value(c.value(0,-1))) + g(value(c.value())) ) 
-    + scalar(-eps/2)*( wave_y(value(c.value(0,-1)))+wave_y(value(c.value())) ) 
+    + scalar(-eps/2)*sy(c)
+    *std::max( wave_y(value(c.value(0,-1))),wave_y(value(c.value())) ) 
     * dw_dy(c);
 }
 
