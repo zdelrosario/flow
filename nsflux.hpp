@@ -17,11 +17,15 @@ using size_type = unsigned;
 // 
 // DUAL GRID DERIVATIVES
 // 
+
+// DEBUG -- estimated cell dimensions, need to use
+//          grid mapping
+
 /* --- HORIZONTAL DERIVATIVES --- */
 /* --- du_dx --- */
 template <typename Cell, typename Fcn>
 typename Cell::CellScalar df_dx_r(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dx())*(
         // Upper right
           f(c.value(1,0))  - f(c.value(0,0)) + 
           f(c.value(1,-1)) - f(c.value(0,-1)) +
@@ -32,7 +36,7 @@ typename Cell::CellScalar df_dx_r(Cell c, Fcn f) {
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_l(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dx())*(
         // Upper left
           f(c.value(0,0))  - f(c.value(-1,0)) + 
           f(c.value(0,-1)) - f(c.value(-1,-1)) + 
@@ -43,7 +47,7 @@ typename Cell::CellScalar df_dx_l(Cell c, Fcn f) {
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_t(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dx())*(
         // Upper right
           f(c.value(1,-1))  - f(c.value(-1,-1)) + 
           f(c.value(1,0)) - f(c.value(-1,0))
@@ -51,7 +55,7 @@ typename Cell::CellScalar df_dx_t(Cell c, Fcn f) {
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dx_b(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dx())*(
         // Upper left
           f(c.value(1,1)) - f(c.value(-1,1)) + 
           f(c.value(1,0)) - f(c.value(-1,0))
@@ -62,7 +66,7 @@ typename Cell::CellScalar df_dx_b(Cell c, Fcn f) {
 /* --- du_dy --- */
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_t(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dy())*(
         // Upper right
           f(c.value(1,-1)) - f(c.value(1,0)) + 
           f(c.value(0,-1)) - f(c.value(0,0)) +
@@ -73,7 +77,7 @@ typename Cell::CellScalar df_dy_t(Cell c, Fcn f) {
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_b(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dy())*(
         // Bottom right
           f(c.value(1,0)) - f(c.value(1,1)) + 
           f(c.value(0,0)) - f(c.value(0,1)) +
@@ -84,14 +88,14 @@ typename Cell::CellScalar df_dy_b(Cell c, Fcn f) {
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_l(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dy())*(
           f(c.value(-1,-1)) - f(c.value(-1,1)) + 
           f(c.value(0,-1)) - f(c.value(0,1))
         );
 }
 template <typename Cell, class Fcn>
 typename Cell::CellScalar df_dy_r(Cell c, Fcn f) {
-  return typename Cell::CellScalar(0.25)*(
+  return typename Cell::CellScalar(0.25/c.dy())*(
           f(c.value(1,-1)) - f(c.value(1,1)) + 
           f(c.value(0,-1)) - f(c.value(0,1))
         );

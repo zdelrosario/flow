@@ -31,7 +31,7 @@ int main() {
   size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 5e2;   // iteration stride for console printback
-  scalar res_min = 1e-2; // minimum residual for convergence
+  scalar res_min = 5e-3; // minimum residual for convergence
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -46,10 +46,10 @@ int main() {
   // Flow conditions
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
   // Boundary conditions
-  flag B_wall = {1,2,2,1}; // Mirror momentum, neumann in density and energy
-  flag B_in   = {3,3,3,3}; // Inlet condition
-  flag B_out  = {4,4,4,4}; // Outlet condition
-  flag B_mir  = {1,1,2,1}; // Vertical mirror
+  flag B_wall = {{1,2,2,1}}; // Mirror momentum, neumann in density and energy
+  flag B_in   = {{3,3,3,3}}; // Inlet condition
+  flag B_out  = {{4,4,4,4}}; // Outlet condition
+  flag B_mir  = {{1,1,2,1}}; // Vertical mirror
   // Reserve space for cell values
   std::vector<value> V( Nt*Mt, U_inf );
 
@@ -78,14 +78,14 @@ int main() {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
-    // rk4(h,val); // Fixed timestep
     res = rk4_local(val); // local CFL estimate
     // Compute current time
     T = GetTimeMs64();
     dT = double(T-T_0)/1e3/60.; // minutes
     // Print back residual, execution time
     if (n % stride == 0) {
-      std::cout << "n=" << n << ", res=" << res << ", dT=" << dT << "min" << std::endl;
+      std::cout << "n=" << n << ", res=" << res;
+      std::cout << ", dT=" << dT << "min" << std::endl;
     }
     // Iterate the counter
     ++n;

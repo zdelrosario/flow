@@ -88,7 +88,8 @@ typename Cell::CellValue fj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   return scalar(0.5)*( f(value(c.value(1,0))) + f(value(c.value())) ) 
-    + scalar(-eps/2) * ( wave_x(value(c.value(1,0))) + wave_x(value(c.value())) ) * dw_dx(c);
+    + scalar(-eps/2)*( wave_x(value(c.value(1,0)))+wave_x(value(c.value())) ) 
+    * dw_dx(c);
 }
 
 /** Jameson Vertical Flux
@@ -98,7 +99,8 @@ typename Cell::CellValue gj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   return scalar(0.5)*( g(value(c.value(0,-1))) + g(value(c.value())) ) 
-    + scalar(-eps/2)*( wave_y(value(c.value(0,-1))) + wave_y(value(c.value())) ) * dw_dy(c);
+    + scalar(-eps/2)*( wave_y(value(c.value(0,-1)))+wave_y(value(c.value())) ) 
+    * dw_dy(c);
 }
 
 // 
