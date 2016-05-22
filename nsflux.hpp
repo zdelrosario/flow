@@ -107,67 +107,75 @@ typename Cell::CellScalar df_dy_r(Cell c, Fcn f) {
 template <typename Cell>
 typename Cell::CellScalar tau_xx_r(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (
-          scalar(0.5)*df_dx_r(c,u) - 
+          scalar(4/3)*df_dx_r(c,u) - 
           scalar(1.5)*df_dy_r(c,v) );
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xx_l(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (
-          scalar(0.5)*df_dx_l(c,u) - 
+          scalar(4/3)*df_dx_l(c,u) - 
           scalar(1.5)*df_dy_l(c,v) );
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_yy_t(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (
-          scalar(0.5)*df_dy_t(c,v) - 
+          scalar(4/3)*df_dy_t(c,v) - 
           scalar(1.5)*df_dx_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_yy_b(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (
-          scalar(0.5)*df_dy_b(c,v) - 
+          scalar(4/3)*df_dy_b(c,v) - 
           scalar(1.5)*df_dx_b(c,u));
 }
 
 template <typename Cell>
 typename Cell::CellScalar tau_xy_r(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (df_dx_r(c,v) - df_dy_r(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_l(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (df_dx_l(c,v) - df_dy_l(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_t(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (df_dx_t(c,v) - df_dy_t(c,u));
 }
 template <typename Cell>
 typename Cell::CellScalar tau_xy_b(Cell c) {
   using scalar = typename Cell::CellScalar;
-  auto u = [](typename Cell::CellValue val) { return uf(val); };
-  auto v = [](typename Cell::CellValue val) { return vf(val); };
+  using value  = typename Cell::CellValue;
+  auto u = [](value val) { return uf(val); };
+  auto v = [](value val) { return vf(val); };
   return scalar(muf(c.value())) * (df_dx_b(c,v) - df_dy_b(c,u));
 }
 
