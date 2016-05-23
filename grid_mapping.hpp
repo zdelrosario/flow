@@ -29,29 +29,29 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
   // int Nt  = 34; // Total vertical mesh points
   // int Nbl = 22; // Boundary layer vertical points
 
-  float H = 0.1;        // Domain height
-  float L = 0.1;        // Plate length
-  float y_fm = 5.4e-4;  // Height of fine mesh
-  float r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
-  float alp = 2;        // Expansion coefficient
+  double H = 0.1;        // Domain height
+  double L = 0.1;        // Plate length
+  double y_fm = 5.4e-4;  // Height of fine mesh
+  double r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
+  double alp = 2;        // Expansion coefficient
 
-  float dx = L / (Mt-2*pad);
+  double dx = L / (Mt-2*pad);
 
   /* --- FIND PARAMETER VALUES --- */
   // Objective function for k_fm
-  auto f_fm = [&r_min,&Nbl](float k) {
+  auto f_fm = [&r_min,&Nbl](double k) {
     return r_min-(exp(k/(Nbl-2))-1)/(exp(k)-1);
   };
   // Find k_fm
-  float k_fm = secant(2.0,3.0,f_fm);
-  float dy_cm = y_fm*( (exp(k_fm*(Nbl-1)/(Nbl-2))-1)/(exp(k_fm)-1) - 1);
+  double k_fm = secant(2.0,3.0,f_fm);
+  double dy_cm = y_fm*( (exp(k_fm*(Nbl-1)/(Nbl-2))-1)/(exp(k_fm)-1) - 1);
 
   // Objective function for k_cm
-  auto f_cm = [&dy_cm,&H,&y_fm,&Nt,&Nbl](float k) {
+  auto f_cm = [&dy_cm,&H,&y_fm,&Nt,&Nbl](double k) {
     return dy_cm - (H-y_fm)*(exp(k/(Nt-Nbl))-1)/(exp(k)-1);
   };
   // Find k_cm
-  float k_cm = secant(7.0,8.0,f_cm);
+  double k_cm = secant(7.0,8.0,f_cm);
   
   /* --- BUILD GRID --- */
   // Fine mesh vertical points
@@ -75,26 +75,26 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
   // Horizontal point function
   auto x_mesh = [&](int j) {
     if (j==0)
-      return float(0);
+      return double(0);
     else if (j<=pad) {
-      float temp = 0;
+      double temp = 0;
       for (int i=0; i<j; ++i) 
         temp += pow(alp,pad-i);
-      return float(temp * dx);
+      return double(temp * dx);
     }
     else if (j>=Mt-pad-1) {
-      float temp = 0;
+      double temp = 0;
       for (int i=0; i<pad; ++i) 
         temp += pow(alp,pad-i);
       for (int i=0; i<(j-Mt+pad+1); ++i)
         temp += pow(alp,j-Mt+pad);
-      return float((temp + j-pad)*dx);
+      return double((temp + j-pad)*dx);
     }
     else {
-      float temp = 0;
+      double temp = 0;
       for (int i=0; i<pad; ++i) 
         temp += pow(alp,pad-i);
-      return float((temp + j-pad)*dx);
+      return double((temp + j-pad)*dx);
     }
   };
 

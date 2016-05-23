@@ -28,10 +28,10 @@ int main() {
   scalar e_inf   = 298537;  // Internal energy
   // Time integration parameters
   // scalar h = 1e-8;          // fixed timestep
-  size_type iter_max = 1e6; // max iterations
+  size_type iter_max = 2e4; // max iterations
   size_type n = 0;          // current iterations
-  size_type stride = 5e2;   // iteration stride for console printback
-  scalar res_min = 5e-3; // minimum residual for convergence
+  size_type stride = 1e2;   // iteration stride for console printback
+  scalar res_min = 5e-3;    // residual convergence tolerance
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -60,10 +60,10 @@ int main() {
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
   // Freestream mirror
   for (int i=0; i<buf; ++i) {
-    bot_b[i] = B_mir;
-    bot_b[Mt-3-i] = B_mir;
+    bot_b[i] = B_mir;         // leading mirror
+    // bot_b[Mt-3-i] = B_mir;    // trailing mirror
   }
-  right_b[Nt-1] = B_mir;
+  right_b[Nt-1] = B_wall;
 
   // Define grid
   GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
@@ -74,11 +74,12 @@ int main() {
   uint64 T_0 = GetTimeMs64();
   uint64 T;
   double dT;
-  while ((n<=iter_max) and (res>res_min)) {
+  while ((n<iter_max) and (res>res_min)) {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
-    res = rk4_local(val); // local CFL estimate
+    res = rk4_local(val);
+    // res = euler_local(val);
     // Compute current time
     T = GetTimeMs64();
     dT = double(T-T_0)/1e3/60.; // minutes
@@ -90,12 +91,22 @@ int main() {
     // Iterate the counter
     ++n;
   }
+
+  // Print final iteration
+  std::cout << "n=" << n << ", res=" << res;
+  std::cout << ", dT=" << dT << "min" << std::endl;
+
+  // Print status messages
   if (res <= res_min) {
     std::cout << "Convergence tolerance reached!" << std::endl;
   }
+  else
+    std::cout << "Convergence not reached..." << std::endl;
   if (n >= iter_max) {
     std::cout << "Iteration limit reached." << std::endl;
   }
+  else
+    std::cout << "Iteration limit not reached" << std::endl;
   
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points

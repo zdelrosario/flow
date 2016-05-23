@@ -50,7 +50,7 @@ int main() {
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
   // Time integration parameters
-  scalar h = 1e-8;
+  // scalar h = 1e-8;
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -66,10 +66,10 @@ int main() {
   value U_inf = {rho_inf,rho_inf*u_inf,rho_inf*v_inf,rho_inf*e_inf}; // Inlet
   value U_wall = {rho_inf,0,0,rho_inf*e_inf};   // Wall state
   // Boundary conditions
-  flag B_wall = {1,2,2,1}; // Mirror momentum, neumann in density and energy
-  flag B_in   = {3,3,3,3}; // Inlet condition
-  flag B_out  = {4,4,4,4}; // Outlet condition
-  flag B_mir  = {1,1,2,1}; // Vertical mirror
+  flag B_wall = {{1,2,2,1}}; // Mirror momentum, neumann in density and energy
+  flag B_in   = {{3,3,3,3}}; // Inlet condition
+  flag B_out  = {{4,4,4,4}}; // Outlet condition
+  flag B_mir  = {{1,1,2,1}}; // Vertical mirror
   // Reserve space for cell values
   std::vector<value> V( Nt*Mt, U_inf );
   // Set dirichlet value on bottom
@@ -98,12 +98,12 @@ int main() {
   // }
 
   // DEBUG -- Check bc handling
-  std::cout<<"(1,1):"<<std::endl;
-  val(1,1).print(); std::cout<<std::endl;
-  std::cout<<"(1,0):"<<std::endl;
-  val(1,0).print(); std::cout<<std::endl;
-  std::cout<<"(0,1):"<<std::endl;
-  val(0,1).print(); std::cout<<std::endl;
+  // std::cout<<"(1,1):"<<std::endl;
+  // val(1,1).print(); std::cout<<std::endl;
+  // std::cout<<"(1,0):"<<std::endl;
+  // val(1,0).print(); std::cout<<std::endl;
+  // std::cout<<"(0,1):"<<std::endl;
+  // val(0,1).print(); std::cout<<std::endl;
 
   // std::cout<<"(34,1):"<<std::endl;
   // val(34,1).print(); std::cout<<std::endl;
@@ -134,7 +134,8 @@ int main() {
   // size_type i=34,j=1; // Bottom left
   // size_type i=1,j=1; // Top left
   // size_type i=2,j=2; // Interior
-  size_type i=34,j=1+buf; // Plate front
+  // size_type i=34,j=1+buf; // Plate front
+  size_type i=34,j=2+buf; // Plate front + 1
 
   std::cout << "i="<<i<<",j="<<j<<std::endl;
   std::cout << "end of RK step" << std::endl;
@@ -147,6 +148,26 @@ int main() {
   std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3
   std::cout<<"k4=";     val(i,j,3).print(); std::cout<<std::endl; // k4
   std::cout<<"y(t=h)="; val(i,j).print(); std::cout<<std::endl; // y(t=h)
+
+  // DEBUG -- values around cell
+  val(i-1,j-1).print(); val(i-1,j).print(); val(i-1,j+1).print(); std::cout<<std::endl;
+  val(i,j-1).print(); val(i,j).print(); val(i,j+1).print();       std::cout<<std::endl;
+  val(i+1,j-1).print(); val(i+1,j).print(); val(i+1,j+1).print(); std::cout<<std::endl;
+  // DEBUG -- tau terms
+  auto c = grid.cell(i,j);
+  std::cout << "tau_xy_t=" << tau_xy_t(c) << std::endl;
+  std::cout << "tau_xy_b=" << tau_xy_b(c) << std::endl;
+  // DEBUG -- derivatives
+  auto u = [](value val) { return uf(val); };
+  std::cout << "du_dy_t=" << df_dy_t(c,u) << std::endl;
+  std::cout << "du_dy_b=" << df_dy_b(c,u) << std::endl;
+  // DEBUG -- differences
+  std::cout << "diff_t=" << u(c.value(-1,-1)) - u(c.value(-1,+0))
+    +2*(u(c.value(+0,-1)) - u(c.value(+0,+0)))
+      + u(c.value(+1,-1)) - u(c.value(+1,+0)) << std::endl;
+  std::cout << "diff_b=" << u(c.value(-1,+0)) - u(c.value(-1,+1))
+    +2*(u(c.value(+0,+0)) - u(c.value(+0,+1)))
+      + u(c.value(+1,+0)) - u(c.value(+1,+1)) << std::endl;
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points

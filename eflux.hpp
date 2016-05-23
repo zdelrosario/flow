@@ -13,19 +13,21 @@
 
 using size_type = unsigned;
 
-float eps = 0.25;  // artificial dissipation constant
+double k2 = 1;
+double k4 = 1/32;
+double c4 = 2;
 
 /** Horizontal Wave Speed
  */
 template <typename Value>
-float wave_x(const Value& w) {
+double wave_x(const Value& w) {
   return std::abs(w[1]/w[0])+cf(w);
 }
 
 /** Vertical Wave Speed
  */
 template <typename Value>
-float wave_y(const Value& w) {
+double wave_y(const Value& w) {
   return std::abs(w[2]/w[0])+cf(w);
 }
 
@@ -38,7 +40,7 @@ template <typename Value>
 Value f(const Value& w) {
   Value out; out.resize(w.size());
   // Calculate pressure
-  float P = pf(w);
+  double P = pf(w);
   // Calculate flux elements
   out[0] = w[1];
   out[1] = pow(w[1],2)/w[0]+P;
@@ -56,7 +58,7 @@ template <typename Value>
 Value g(const Value& w) {
   Value out; out.resize(w.size());
   // Calculate pressure
-  float P = pf(w);
+  double P = pf(w);
   // Calculate flux elements
   out[0] = w[2];
   out[1] = w[1]*w[2]/w[0];
@@ -72,28 +74,73 @@ Value g(const Value& w) {
  */
 template <typename Cell>
 typename Cell::CellValue dw_dx(Cell c) {
-  return typename Cell::CellValue(c.value(1,0)) - typename Cell::CellValue(c.value());
+  using value = typename Cell::CellValue;
+  return value(c.value(0,1)) - value(c.value());
 }
 /** Vertical State Difference
  */
 template <typename Cell>
 typename Cell::CellValue dw_dy(Cell c) {
-  return typename Cell::CellValue(c.value(0,-1)) - typename Cell::CellValue(c.value());
+  using value = typename Cell::CellValue;
+  return value(c.value(-1,0)) - value(c.value());
+}
+
+/** Horizontal Speed Max
+ */
+template <typename Cell>
+typename Cell::CellScalar rx(Cell c) {
+  using value  = typename Cell::CellValue;
+  return std::max( 
+                wave_x(value(c.value(0,1))),
+                wave_x(value(c.value())) );
+}
+/** Vertical Speed Max
+ */
+template <typename Cell>
+typename Cell::CellScalar ry(Cell c) {
+  using value  = typename Cell::CellValue;
+  return std::max( 
+                wave_y(value(c.value(-1,0))),
+                wave_y(value(c.value())) );
 }
 
 /** Horizontal Pressure Sensor
  */
 template <typename Cell>
 typename Cell::CellScalar sx(Cell c) {
-  return std::abs( (pf(c.value(1,0))-2*pf(c.value())+pf(c.value(-1,0))) / 
-                   (pf(c.value(1,0))+2*pf(c.value())+pf(c.value(-1,0))) );
+  return std::abs( (pf(c.value(0,1))-2*pf(c.value())+pf(c.value(0,-1))) / 
+                   (pf(c.value(0,1))+2*pf(c.value())+pf(c.value(0,-1))) );
 }
 /** Vertical Pressure Sensor
  */
 template <typename Cell>
 typename Cell::CellScalar sy(Cell c) {
-  return std::abs( (pf(c.value(0,1))-2*pf(c.value())+pf(c.value(0,-1))) / 
-                   (pf(c.value(0,1))+2*pf(c.value())+pf(c.value(0,-1))) );
+  return std::abs( (pf(c.value(1,0))-2*pf(c.value())+pf(c.value(-1,0))) / 
+                   (pf(c.value(1,0))+2*pf(c.value())+pf(c.value(-1,0))) );
+}
+
+// Dissipative Coefficients
+template <typename Cell>
+typename Cell::CellScalar eps2_x(Cell c) {
+  return k2 * sx(c) * rx(c);
+  // return 0.1 * rx(c);
+  // return 0.;
+}
+template <typename Cell>
+typename Cell::CellScalar eps2_y(Cell c) {
+  return k2 * sy(c) * ry(c);
+  // return 0.1 * ry(c);
+  // return 0.;
+}
+template <typename Cell>
+typename Cell::CellScalar eps4_x(Cell c) {
+  return std::max(0.,k4*rx(c)-c4*eps2_x(c));
+  // return 0.;
+}
+template <typename Cell>
+typename Cell::CellScalar eps4_y(Cell c) {
+  return std::max(0.,k4*ry(c)-c4*eps2_y(c));
+  // return 0.;
 }
 
 /** Jameson Horizontal Flux
@@ -102,10 +149,10 @@ template <typename Cell>
 typename Cell::CellValue fj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  return scalar(0.5)*( f(value(c.value(1,0))) + f(value(c.value())) ) 
-    + scalar(-eps/2)*sx(c)
-    *std::max( wave_x(value(c.value(1,0))),wave_x(value(c.value())) ) 
-    * dw_dx(c);
+  // Central flux + O(dx^2) dissipation + O(dx^4) dissipation
+  return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+    - eps2_x(c) * dw_dx(c)
+    + eps4_x(c) * (dw_dx(c.neighbor(0,1))-2.*dw_dx(c)+dw_dx(c.neighbor(0,-1)));
 }
 
 /** Jameson Vertical Flux
@@ -114,10 +161,10 @@ template <typename Cell>
 typename Cell::CellValue gj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  return scalar(0.5)*( g(value(c.value(0,-1))) + g(value(c.value())) ) 
-    + scalar(-eps/2)*sy(c)
-    *std::max( wave_y(value(c.value(0,-1))),wave_y(value(c.value())) ) 
-    * dw_dy(c);
+  // Central flux + O(dy^2) dissipation + O(dy^4) dissipation
+  return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
+    - eps2_y(c) * dw_dy(c)
+    + eps4_y(c) * (dw_dy(c.neighbor(1,0))-2.*dw_dy(c)+dw_dy(c.neighbor(-1,0)));
 }
 
 // 
@@ -157,8 +204,8 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
 // std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
 // std::cout << std::endl;
     /* --- COMPUTE FLUXES --- */
-    Fx = fj(c) + scalar(-1)*fj(c.neighbor(-1,0));
-    Fy = gj(c) + scalar(-1)*gj(c.neighbor(0,1));
+    Fx = fj(c) + scalar(-1)*fj(c.neighbor(0,-1));
+    Fy = gj(c) + scalar(-1)*gj(c.neighbor(1,0));
     // Scale the fluxes by spatial discretization
     Fx= scalar(1/c.dx())*Fx;
     Fy= scalar(1/c.dy())*Fy;
