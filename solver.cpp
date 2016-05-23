@@ -35,7 +35,7 @@ int main() {
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
-  int Mt = 40; // Total horizontal cells
+  int Mt = 50; // Total horizontal cells
   int buf = 4; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
@@ -49,20 +49,23 @@ int main() {
   flag B_wall = {{1,2,2,1}}; // Mirror momentum, neumann in density and energy
   flag B_in   = {{3,3,3,3}}; // Inlet condition
   flag B_out  = {{4,4,4,4}}; // Outlet condition
+  flag B_pres = {{5,5,5,5}}; // Pressure set
   flag B_mir  = {{1,1,2,1}}; // Vertical mirror
   // Reserve space for cell values
   std::vector<value> V( Nt*Mt, U_inf );
 
   // Specify boundary condition flag vectors
   std::vector<flag> left_b(Nt,B_in);    // Subsonic inlet
-  std::vector<flag> right_b(Nt,B_out);  // Subsonic outlet
-  std::vector<flag> top_b(Mt-2,B_out);  // Subsonic outlet
+  // std::vector<flag> right_b(Nt,B_out);  // Subsonic outlet
+  std::vector<flag> right_b(Nt,B_pres);  // Pressure set
+  // std::vector<flag> top_b(Mt-2,B_out);  // Subsonic outlet
+  std::vector<flag> top_b(Mt-2,B_pres);  // Pressure set
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
   // Freestream mirror
-  for (int i=0; i<buf; ++i) {
-    bot_b[i] = B_mir;         // leading mirror
-    // bot_b[Mt-3-i] = B_mir;    // trailing mirror
-  }
+  // for (int i=0; i<buf; ++i) {
+  //   bot_b[i] = B_mir;         // leading mirror
+  //   bot_b[Mt-3-i] = B_mir;    // trailing mirror
+  // }
   right_b[Nt-1] = B_wall;
 
   // Define grid

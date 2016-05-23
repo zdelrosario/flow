@@ -122,25 +122,25 @@ typename Cell::CellScalar sy(Cell c) {
 // Dissipative Coefficients
 template <typename Cell>
 typename Cell::CellScalar eps2_x(Cell c) {
-  return k2 * sx(c) * rx(c);
-  // return 0.1 * rx(c);
+  // return k2 * sx(c) * rx(c);
+  return 0.1 * rx(c);
   // return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps2_y(Cell c) {
-  return k2 * sy(c) * ry(c);
-  // return 0.1 * ry(c);
+  // return k2 * sy(c) * ry(c);
+  return 0.1 * ry(c);
   // return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_x(Cell c) {
-  return std::max(0.,k4*rx(c)-c4*eps2_x(c));
-  // return 0.;
+  // return std::max(0.,k4*rx(c)-c4*eps2_x(c));
+  return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_y(Cell c) {
-  return std::max(0.,k4*ry(c)-c4*eps2_y(c));
-  // return 0.;
+  // return std::max(0.,k4*ry(c)-c4*eps2_y(c));
+  return 0.;
 }
 
 /** Jameson Horizontal Flux

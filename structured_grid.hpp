@@ -94,6 +94,7 @@ private:
    * entire state vector
    *    3 = inflow
    *    4 = outflow
+   *    5 = pressure set
    * 
    * @return State vector obeying boundary conditions
    */
@@ -130,20 +131,34 @@ private:
         s_inv = pow(v_o[0],gam)/pf(v_o);
         U_r = uf(v_o) + (U_s-U_o)*n[0];
         V_r = vf(v_o) + (U_s-U_o)*n[1];
+        // Use invariants to compute ghost state
+        res[0] = pow( s_inv*pow(C_s,2)/gam, 1/(gam-1) );
+        scalar_type P_r = res[0]*pow(C_s,2)/gam;
+        res[1] = res[0]*U_r;
+        res[2] = res[0]*V_r;
+        res[3] = P_r/(gam-1) + 0.5*res[0]*(pow(U_r,2)+pow(V_r,2));
       }
       // Outflow
       else if (bc_type==4) {
         s_inv = pow(v_i[0],gam)/pf(v_i);
         U_r = uf(v_i) + (U_s-U_i)*n[0];
         V_r = vf(v_i) + (U_s-U_i)*n[1];
+        // Use invariants to compute ghost state
+        res[0] = pow( s_inv*pow(C_s,2)/gam, 1/(gam-1) );
+        scalar_type P_r = res[0]*pow(C_s,2)/gam;
+        res[1] = res[0]*U_r;
+        res[2] = res[0]*V_r;
+        res[3] = P_r/(gam-1) + 0.5*res[0]*(pow(U_r,2)+pow(V_r,2));
+      }
+      // Pressure set
+      else if (bc_type==5) {
+        res[0] = v_i[0];
+        res[1] = v_i[1];
+        res[2] = v_i[2];
+        res[3] = p_inf/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
       }
       else {assert(false);}
-      // Use invariants to compute ghost state
-      res[0] = pow( s_inv*pow(C_s,2)/gam, 1/(gam-1) );
-      scalar_type P_r = res[0]*pow(C_s,2)/gam;
-      res[1] = res[0]*U_r;
-      res[2] = res[0]*V_r;
-      res[3] = P_r/(gam-1) + 0.5*res[0]*(pow(U_r,2)+pow(V_r,2));
+      
       return res;
     }
 
@@ -658,11 +673,11 @@ public:
     }
     /* Returns average cell width */
     scalar_type dx() {
-      return (this->x(2)[0]+this->x(3)[0]-this->x(1)[0]-this->x(4)[0])/2.0;
+      return (x(2)[0]+x(3)[0]-x(1)[0]-x(4)[0])/2.0;
     }
     /* Returns average cell height */
     scalar_type dy() {
-      return (this->x(1)[1]+this->x(2)[1]-this->x(3)[1]-this->x(4)[1])/2.0;
+      return (x(1)[1]+x(2)[1]-x(3)[1]-x(4)[1])/2.0;
     }
    };
 
