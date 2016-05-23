@@ -75,13 +75,13 @@ W4 = np.reshape(np.array(W4),(-1,m-1))
 # Global View
 fig = plt.figure()
 # Interior grid lines
-for ii in range(n-1):
-    for jj in range(m-1):
-        plt.plot([Xm[ii][jj],Xm[ii+1][jj]],[Ym[ii][jj],Ym[ii+1][jj]],'k-')
-        plt.plot([Xm[ii][jj],Xm[ii][jj+1]],[Ym[ii][jj],Ym[ii][jj+1]],'k-')
-# Right and bottom grid line
-plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
-plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
+# for ii in range(n-1):
+#     for jj in range(m-1):
+#         plt.plot([Xm[ii][jj],Xm[ii+1][jj]],[Ym[ii][jj],Ym[ii+1][jj]],'k-')
+#         plt.plot([Xm[ii][jj],Xm[ii][jj+1]],[Ym[ii][jj],Ym[ii][jj+1]],'k-')
+# # Right and bottom grid line
+# plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
+# plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
 # Velocity contour
 cs = plt.contourf(Xs,Ys,W2)
 plt.colorbar(cs)
@@ -107,9 +107,8 @@ plt.ylim([min(Y)-d,max(Y)+d])
 # plt.ylim([-1e-5,e])
 
 # Simple matrix plot
-fig = plt.figure()
-cs = plt.matshow( W2 )
-plt.colorbar(cs)
+# cs = plt.matshow( W2 )
+# plt.colorbar(cs)
 
 # Plot velocity quiver
 # fig = plt.figure()

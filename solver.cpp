@@ -31,7 +31,7 @@ int main() {
   size_type iter_max = 2e4; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e2;   // iteration stride for console printback
-  scalar res_min = 5e-3;    // residual convergence tolerance
+  scalar res_min = 1e-6;    // residual convergence tolerance
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -62,11 +62,11 @@ int main() {
   std::vector<flag> top_b(Mt-2,B_pres);  // Pressure set
   std::vector<flag> bot_b(Mt-2,B_wall); // Wall bottom
   // Freestream mirror
-  // for (int i=0; i<buf; ++i) {
-  //   bot_b[i] = B_mir;         // leading mirror
-  //   bot_b[Mt-3-i] = B_mir;    // trailing mirror
-  // }
-  right_b[Nt-1] = B_wall;
+  for (int i=0; i<buf; ++i) {
+    bot_b[i] = B_mir;         // leading mirror
+    // bot_b[Mt-3-i] = B_mir;    // trailing mirror
+  }
+  right_b[Nt-1] = B_mir;
 
   // Define grid
   GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
