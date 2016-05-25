@@ -4,8 +4,13 @@ import numpy as np
 
 from solve_blasius import blasius_solution, eta_fcn, u_fcn
 
+from math import sqrt
+
 d = 0.01
 e = 1e-5
+
+U_inf = 68.93 # m/s
+nu = 15.11e-6 # m^2/s
 
 # Command line argument form
 # if len(sys.argv) < 2:
@@ -20,6 +25,9 @@ e = 1e-5
 grid_file = "solution.grid.dat"
 sol_file  = "solution.val.dat"
 
+##################################################
+# Post-process data
+##################################################
 # Import grid
 f = open(grid_file,'r')
 # First line is grid dimensions
@@ -57,13 +65,33 @@ for line in f:
         W3.append(float(val[2]))
         W4.append(float(val[3]))
 # Velocities
-U = [W2[i]/W1[i] for i in range(len(W1))]
-V = [W3[i]/W1[i] for i in range(len(W1))]
+U = np.reshape(np.array([W2[i]/W1[i] for i in range(len(W1))]),(-1,m-1))
+V = np.reshape(np.array([W3[i]/W1[i] for i in range(len(W1))]),(-1,m-1))
 
 W1 = np.reshape(np.array(W1),(-1,m-1))
 W2 = np.reshape(np.array(W2),(-1,m-1))
 W3 = np.reshape(np.array(W3),(-1,m-1))
 W4 = np.reshape(np.array(W4),(-1,m-1))
+
+# Non-dimensionalized results
+ind = 40    # Horizontal station index
+U_c = U[:,ind]
+X_c = Xs[:,ind]
+Y_c = Ys[:,ind]
+Eta_c = [eta_fcn(X_c[i],Y_c[i],nu,U_inf) for i in range(len(U_c))]
+Utl_c = U_c / U_inf
+
+##################################################
+# Blasius solution
+##################################################
+Eta_b = np.linspace(0,12,int(1e4))
+F = blasius_solution(Eta_b)
+f = F[:,0]; fp = F[:,1]
+Utl_b = fp
+
+##################################################
+# Plotting
+##################################################
 
 # Global View
 fig = plt.figure()
@@ -73,6 +101,12 @@ plt.colorbar(cs)
 # Axis limits
 plt.xlim([min(X)-d,max(X)+d])
 plt.ylim([min(Y)-d,max(Y)+d])
+
+# Velocity profile
+fig = plt.figure()
+plt.plot(Utl_c,Eta_c,'*')
+plt.plot(Utl_b,Eta_b)
+plt.ylim([Eta_b[0],Eta_b[-1]])
 
 # Show all plots
 plt.show()
