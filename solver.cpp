@@ -28,9 +28,9 @@ int main() {
   scalar e_inf   = 298537;  // Internal energy
   // Time integration parameters
   // scalar h = 1e-8;          // fixed timestep
-  size_type iter_max = 2e4; // max iterations
+  size_type iter_max = 1e9; // max iterations
   size_type n = 0;          // current iterations
-  size_type stride = 1e2;   // iteration stride for console printback
+  size_type stride = 1e3;   // iteration stride for console printback
   scalar res_min = 1e-6;    // residual convergence tolerance
   // Discretization parameters
   int Nt = 36; // Total vertical cells
@@ -48,7 +48,7 @@ int main() {
   // Boundary conditions
   flag B_wall = {{1,2,2,1}}; // Mirror momentum, neumann in density and energy
   flag B_in   = {{3,3,3,3}}; // Inlet condition
-  flag B_out  = {{4,4,4,4}}; // Outlet condition
+  // flag B_out  = {{4,4,4,4}}; // Outlet condition
   flag B_pres = {{5,5,5,5}}; // Pressure set
   flag B_mir  = {{1,1,2,1}}; // Vertical mirror
   // Reserve space for cell values
