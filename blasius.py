@@ -1,11 +1,17 @@
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+# choose the backend to handle window geometry
+matplotlib.use("Qt4Agg")
+# Import pyplot
+import matplotlib.pyplot as plt
 
 from solve_blasius import blasius_solution, eta_fcn, u_fcn
 
 from math import sqrt
 
+# Plot settings
+offset = [(0,0),(700,0),(1400,0)] # Plot window locations
 d = 0.01
 e = 1e-5
 
@@ -74,11 +80,11 @@ W3 = np.reshape(np.array(W3),(-1,m-1))
 W4 = np.reshape(np.array(W4),(-1,m-1))
 
 # Non-dimensionalized results
-ind = 40    # Horizontal station index
+ind = 20    # Horizontal station index
 U_c = U[:,ind]
 X_c = Xs[:,ind]
 Y_c = Ys[:,ind]
-Eta_c = [eta_fcn(X_c[i],Y_c[i],nu,U_inf) for i in range(len(U_c))]
+Eta_c = np.array([eta_fcn(X_c[i],Y_c[i],nu,U_inf) for i in range(len(U_c))])
 Utl_c = U_c / U_inf
 
 ##################################################
@@ -101,12 +107,20 @@ plt.colorbar(cs)
 # Axis limits
 plt.xlim([min(X)-d,max(X)+d])
 plt.ylim([min(Y)-d,max(Y)+d])
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[0][0],offset[0][1],dx,dy)
 
 # Velocity profile
 fig = plt.figure()
-plt.plot(Utl_c,Eta_c,'*')
+plt.plot(Utl_c,Eta_c,'*') # Fudge factor
 plt.plot(Utl_b,Eta_b)
 plt.ylim([Eta_b[0],Eta_b[-1]])
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[1][0],offset[1][1],dx,dy)
 
 # Show all plots
 plt.show()
