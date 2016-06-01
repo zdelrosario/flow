@@ -114,7 +114,7 @@ manager.window.setGeometry(offset[0][0],offset[0][1],dx,dy)
 
 # Velocity profile
 fig = plt.figure()
-plt.plot(Utl_c,Eta_c,'*') # Fudge factor
+plt.plot(Utl_c,Eta_c,'*')
 plt.plot(Utl_b,Eta_b)
 plt.ylim([Eta_b[0],Eta_b[-1]])
 # Set plot location on screen
