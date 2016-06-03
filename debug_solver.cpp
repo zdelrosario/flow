@@ -131,11 +131,13 @@ int main() {
   // DEBUG -- single iteration of RK
 
     // DEBUG -- Check the results of Euler flux
-  // size_type i=34,j=1; // Bottom left
+  // size_type i=Nt-2,j=1; // Bottom left
+  // size_type i=Nt-2,j=Mt-2; // Bottom right
   // size_type i=1,j=1; // Top left
+  // size_type i=1,j=Mt-2; // Top right
   // size_type i=2,j=2; // Interior
-  // size_type i=34,j=1+buf; // Plate front
-  size_type i=34,j=2+buf; // Plate front + 1
+  size_type i=Nt-2,j=1+buf; // Plate front
+  // size_type i=Nt-2,j=2+buf; // Plate front + 1
 
   std::cout << "i="<<i<<",j="<<j<<std::endl;
   std::cout << "end of RK step" << std::endl;
@@ -168,6 +170,10 @@ int main() {
   std::cout << "diff_b=" << u(c.value(-1,+0)) - u(c.value(-1,+1))
     +2*(u(c.value(+0,+0)) - u(c.value(+0,+1)))
       + u(c.value(+1,+0)) - u(c.value(+1,+1)) << std::endl;
+
+  // DEBUG -- Check boundary flags
+  std::cout << "bx=" << c.bx() << ", ";
+  std::cout << "by=" << c.by() << std::endl;
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points

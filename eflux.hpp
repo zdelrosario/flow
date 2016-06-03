@@ -135,13 +135,15 @@ typename Cell::CellScalar eps2_y(Cell c) {
 template <typename Cell>
 typename Cell::CellScalar eps4_x(Cell c) {
   // return std::max(0.,k4*rx(c)-c4*eps2_x(c));
-  return k4*rx(c);
+  return k4*rx(c) * 
+         (1-abs(c.bx())); // disable on boundary
   // return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_y(Cell c) {
   // return std::max(0.,k4*ry(c)-c4*eps2_y(c));
-  return k4*ry(c);
+  return k4*ry(c) * 
+         (1-abs(c.by())); // disable on boundary
   // return 0.;
 }
 

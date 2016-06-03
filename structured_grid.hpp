@@ -595,13 +595,33 @@ public:
     // Pointer back to grid
     StructuredGrid* grid_;
     // Cell index
-    size_type i_,j_;
-    short ind_;
+    size_type i_,j_;  // Cell coordinates, i_=vertical, j_=horizontal
+    short ind_;       // Cell index
+    short bx_;        // Cell horizontal boundary flag
+    short by_;        // Cell horizontal boundary flag
+    // Boundary logic
+    void set_bnd() {
+      if (i_==1)
+        bx_ = -1;
+      else if (i_==grid_->n_-2)
+        bx_ = 1;
+      else
+        bx_ = 0;
+      if (j_==1)
+        by_ = 1;
+      else if (j_==grid_->m_-2)
+        by_ = -1;
+      else
+        by_ = 0;
+    }
     // Private constructor
     Cell(const StructuredGrid* grid, size_type i, 
          size_type j, short ind=-1)
         : grid_(const_cast<StructuredGrid*>(grid)), 
-          i_(i), j_(j), ind_(ind) {}
+          i_(i), j_(j), ind_(ind) {
+            // Set the boundary flags
+            set_bnd();
+          }
   public:
     // Public types
     typedef value_type CellValue;
@@ -616,6 +636,12 @@ public:
     }
     size_type jx() {
       return j_;
+    }
+    short by() {
+      return bx_;
+    }
+    short bx() {
+      return by_;
     }
     Proxy value() {
       return Proxy(i_,j_,grid_,ind_);

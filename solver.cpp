@@ -27,16 +27,16 @@ int main() {
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
   // Time integration parameters
-  // scalar h = 1e-8;          // fixed timestep
-  size_type iter_max = 1e9; // max iterations
+  size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback
-  scalar res_min = 1e-6;    // residual convergence tolerance
+  size_type restart = 1e4;  // iteration stride for restart file
+  scalar res_min = 1e-3;    // residual convergence tolerance
   // Discretization parameters
-  int Nt = 36; // Total vertical cells
-  int Nbl= 23; // Number of boundary layer cells
+  int Nt = 50; // Total vertical cells
+  int Nbl= 40; // Number of boundary layer cells
   int Mt = 50; // Total horizontal cells
-  int buf = 4; // Freestream buffer cells
+  int buf = 5; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   std::vector<coord> X((Nt-1)*(Mt-1));      // Generate grid points for
@@ -91,6 +91,13 @@ int main() {
       std::cout << "n=" << n << ", res=" << res;
       std::cout << ", dT=" << dT << "min" << std::endl;
     }
+
+    // Write out restart file
+    if (n % restart == 0) {
+      grid.write_grid("restart.grid.dat");   // grid points
+      grid.write_values("restart.val.dat");  // cell values
+    }
+
     // Iterate the counter
     ++n;
   }
