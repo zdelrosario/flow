@@ -7,6 +7,44 @@
 
 #include "optimize.hpp"
 
+/** Create simple rectangular mesh
+ *
+ * @tparam V Array-like container, 2-Dimensional
+ * 
+ * @param Nt  Total vertical mesh points
+ * @param Mt  Total horizontal mesh points
+ * @param v   Array to which we will write the grid points
+ * 
+ * @pre size(v) == Nt*Mt
+ * @pre for all i, s.t. 0<=i<=Nt*Mt, have size(v[i]) == 2
+ * 
+ * @post v Contains the x,y coordinates of the grid points
+ */
+template <typename V>
+void make_rectangle(int Nt, int Mt, V& v) {
+  // Grid dimensions
+  double H = 0.5;
+  double L = 0.5;
+  // Grid mapping equations
+  auto x_mesh = [&](int j) {
+    return double(L/Mt*j);
+  };
+  auto y_mesh = [&](int i) {
+    return double(H/Nt*i);
+  };
+
+  // Store grid values
+  for (int i=0; i<Nt; ++i) {    // vertical index
+    for (int j=0; j<Mt; ++j) {  // horizontal index
+      // Handle x values
+      v[i*Mt+j][0] = x_mesh(j);
+      // Handle y values
+      v[i*Mt+j][1] = y_mesh(Nt-i-1);
+    }
+  }
+  return;
+}
+
 /** Create mesh for flat plate problem
  *
  * @tparam V Array-like container, 2-Dimensional
@@ -109,7 +147,7 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
       // std::cout << v[i*Mt+j][0] << std::endl;
     }
   }
-
+  return;
 }
 
 #endif // MAP

@@ -14,7 +14,7 @@
 using size_type = unsigned;
 
 double k2 = 1;
-double k4 = 1.0/8.0; // Jameson recommends 1/32 for transonic flows
+double k4 = 1.0/32.0; // Jameson recommends 1/32 for transonic flows
 double c4 = 2;
 
 /** Horizontal Wave Speed
@@ -124,13 +124,13 @@ template <typename Cell>
 typename Cell::CellScalar eps2_x(Cell c) {
   // return k2 * sx(c) * rx(c);
   // return 0.1 * rx(c);
-  return 0.;
+  (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps2_y(Cell c) {
   // return k2 * sy(c) * ry(c);
   // return 0.1 * ry(c);
-  return 0.;
+  (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_x(Cell c) {

@@ -107,8 +107,8 @@ plt.ylim([min(Y)-d,max(Y)+d])
 # plt.ylim([-1e-5,e])
 
 # Simple matrix plot
-# cs = plt.matshow( W2 )
-# plt.colorbar(cs)
+cs = plt.matshow( W2 )
+plt.colorbar(cs)
 
 # Plot velocity quiver
 # fig = plt.figure()
