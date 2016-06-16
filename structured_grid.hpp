@@ -66,15 +66,25 @@ private:
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
-  /** Project velocity
+  /** Project velocity against normal
    *
    * @param v Input state vector
    * @param n Normal against which to project
    * 
    * @return u_n Velocity projected on normal
    */
-  scalar_type proj_vel(const value_type& v, const value_type& n) {
+  scalar_type norm_vel(const value_type& v, const value_type& n) {
     return uf(v)*n[0] + vf(v)*n[1];
+  }
+  /** Project velocity against parallel
+   *
+   * @param v Input state vector
+   * @param n Normal against which to project
+   * 
+   * @return u_n Velocity projected on parallel
+   */
+  scalar_type par_vel(const value_type& v, const value_type& n) {
+    return uf(v)*n[2] + vf(v)*n[3];
   }
   /** Boundary condition helper function
    * @brief Switches between neumann and dirichlet boundary
@@ -95,6 +105,7 @@ private:
    *    3 = inflow
    *    4 = outflow
    *    5 = pressure set
+   *    6 = slip wall
    * 
    * @return State vector obeying boundary conditions
    */
@@ -103,20 +114,21 @@ private:
                         const value_type& n,
                         const value_type& v_i ) {
     // Reserve some space
-    value_type res; res.resize(f.size());    
+    value_type res; res.resize(f.size());
 
     // Characteristic (Full-state) BC
     unsigned bc_type = 0;
     for (size_type i=0; i!=f.size(); ++i) {
-      if ( (f[i]==3) or (f[i]==4) )
+      if ( (f[i]==3) or (f[i]==4) 
+        or (f[i]==5) or (f[i]==6) )
         bc_type = f[i];
     }
     // Apply characteristic BC
     if (bc_type!=0) {
       // Project velocity
       scalar_type U_i,U_o;
-      U_i = proj_vel(v_i,n);
-      U_o = proj_vel(v_o,n);
+      U_i = norm_vel(v_i,n);
+      U_o = norm_vel(v_o,n);
       // Compute Riemann invariants
       scalar_type C_i = cf(v_i);
       scalar_type C_o = cf(v_o);
@@ -157,8 +169,20 @@ private:
         res[2] = v_i[2];
         res[3] = p_inf/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
       }
+      // Slip wall -- assumes flat walls
+      else if (bc_type==6) {
+        // Negate the projected velocity
+        scalar_type u_n =-norm_vel(v_i,n);
+        // Maintain the parallel velocity
+        scalar_type u_p = par_vel(v_i,n);
+        // Set the appropriate values
+        res[0] = v_i[0];
+        res[1] = res[0]*(u_n*n[0] + u_p*n[2]);
+        res[2] = res[0]*(u_n*n[1] + u_p*n[3]);
+        res[3] = v_i[3];
+      }
       else {assert(false);}
-      
+      // Return ghost cell value
       return res;
     }
 
@@ -426,6 +450,8 @@ public:
    * entire state vector
    *    3 = inflow
    *    4 = outflow
+   *    5 = pressure set
+   *    6 = slip wall
    * 
    * @param left_b  Left boundary condition
    * @param right_b Right boundary condition
@@ -494,7 +520,7 @@ public:
     top_n_.resize(top_b_.size());
     bot_n_.resize(bot_b_.size());
 
-    // 
+    // Set boundary cell normals/parallels
     std::fill(left_n_.begin(),left_n_.end(),  
               value_type({-1.0,+0.0,+0.0,+1.0}));
     std::fill(right_n_.begin(),right_n_.end(),
