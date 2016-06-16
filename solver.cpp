@@ -26,7 +26,7 @@ int main() {
   scalar rho_inf = 1.1462;  // Density
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
-  // Time integration parameters
+  // Solver parameters
   size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback

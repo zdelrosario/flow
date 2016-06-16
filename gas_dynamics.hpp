@@ -45,7 +45,12 @@ double cf(const Value& w) {
 /* Viscosity */
 template <typename Value>
 double muf(const Value& w) {
-  return C1*pow(Tf(w),1.5) / (Tf(w)+S);
+  // Sutherland's Law
+  // return C1*pow(Tf(w),1.5) / (Tf(w)+S);
+  // Fixed at 20 C
+  // return 1.82e-5;
+  // Inviscid
+  (void) w; return 0.;
 }
 
 #endif // GAS

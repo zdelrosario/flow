@@ -31,6 +31,9 @@ nu = 15.11e-6 # m^2/s
 grid_file = "solution.grid.dat"
 sol_file  = "solution.val.dat"
 
+# grid_file = "restart.grid.dat"
+# sol_file  = "restart.val.dat"
+
 ##################################################
 # Post-process data
 ##################################################
