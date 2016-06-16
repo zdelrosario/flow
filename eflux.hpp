@@ -14,7 +14,7 @@
 using size_type = unsigned;
 
 double k2 = 1;
-double k4 = 1.0/8.0; // Jameson recommends 1/32 for transonic flows
+double k4 = 1.0/32.0; // Jameson recommends 1/32 for transonic flows
 double c4 = 2;
 
 /** Horizontal Wave Speed
@@ -119,32 +119,94 @@ typename Cell::CellScalar sy(Cell c) {
                    (pf(c.value(1,0))+2*pf(c.value())+pf(c.value(-1,0))) );
 }
 
+// Boundary helper
+template <typename Cell>
+typename Cell::CellScalar bcx(Cell c) {
+  return (1.0-abs(c.bx()));
+}
+template <typename Cell>
+typename Cell::CellScalar bcy(Cell c) {
+  return (1.0-abs(c.by()));
+}
+
 // Dissipative Coefficients
 template <typename Cell>
 typename Cell::CellScalar eps2_x(Cell c) {
+  // Standard JST
   // return k2 * sx(c) * rx(c);
-  // return 0.1 * rx(c);
-  return 0.;
+  // Disable on boundary
+  return k2 * sx(c) * rx(c) * (1-abs(c.bx()));
+  // Disable
+  // (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps2_y(Cell c) {
+  // Standard JST
   // return k2 * sy(c) * ry(c);
-  // return 0.1 * ry(c);
-  return 0.;
+  // Disable on boundary
+  return k2 * sy(c) * ry(c) * (1-abs(c.by()));
+  // Disable
+  // (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_x(Cell c) {
+  // Standard JST
   // return std::max(0.,k4*rx(c)-c4*eps2_x(c));
+
+  // disable on boundary
   return k4*rx(c) * 
-         (1-abs(c.bx())); // disable on boundary
-  // return 0.;
+         (1-abs(c.bx())); 
+
+  // disable on or near boundary
+  // return k4*rx(c) * 
+  //        (1-abs(c.neighbor(0,+1).bx())) *
+  //        (1-abs(c.bx())) * 
+  //        (1-abs(c.neighbor(0,-1).bx())); 
+
+  // Disable
+  (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_y(Cell c) {
+  // Standard JST
   // return std::max(0.,k4*ry(c)-c4*eps2_y(c));
+
+  // disable on boundary
   return k4*ry(c) * 
-         (1-abs(c.by())); // disable on boundary
-  // return 0.;
+         (1-abs(c.by()));
+
+  // disable on or near boundary
+  // return k4*ry(c) * 
+  //        (1-abs(c.neighbor(+1,0).by())) *
+  //        (1-abs(c.by())) * 
+  //        (1-abs(c.neighbor(-1,0).by()));
+
+  // Disable
+  // (void) c; return 0.;
+}
+
+// 4th Order Difference -- artificial dissipation
+template <typename Cell>
+typename Cell::CellValue d4x(Cell c) {
+  // Standard JST
+  return dw_dx(c.neighbor(0,1))
+     -2.*dw_dx(c)
+        +dw_dx(c.neighbor(0,-1));
+  // Disable boundary terms
+  // return dw_dx(c.neighbor(0,+1))*bcx(c.neighbor(0,+1))
+  //    -2.*dw_dx(c)               *bcx(c)
+  //       +dw_dx(c.neighbor(0,-1))*bcx(c.neighbor(0,-1));
+}
+template <typename Cell>
+typename Cell::CellValue d4y(Cell c) {
+  // Standard JST
+  return dw_dy(c.neighbor(1,0))
+     -2.*dw_dy(c)
+        +dw_dy(c.neighbor(-1,0));
+  // Disable boundary terms
+  // return dw_dy(c.neighbor(+1,0))*bcy(c.neighbor(+1,0))
+  //    -2.*dw_dy(c)               *bcy(c)
+  //       +dw_dy(c.neighbor(-1,0))*bcy(c.neighbor(-1,0));
 }
 
 /** Jameson Horizontal Flux
@@ -156,7 +218,7 @@ typename Cell::CellValue fj(Cell c) {
   // Central flux + O(dx^2) dissipation + O(dx^4) dissipation
   return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
     - eps2_x(c) * dw_dx(c)
-    + eps4_x(c) * (dw_dx(c.neighbor(0,1))-2.*dw_dx(c)+dw_dx(c.neighbor(0,-1)));
+    + eps4_x(c) * d4x(c);
 }
 
 /** Jameson Vertical Flux
@@ -168,7 +230,7 @@ typename Cell::CellValue gj(Cell c) {
   // Central flux + O(dy^2) dissipation + O(dy^4) dissipation
   return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
     - eps2_y(c) * dw_dy(c)
-    + eps4_y(c) * (dw_dy(c.neighbor(1,0))-2.*dw_dy(c)+dw_dy(c.neighbor(-1,0)));
+    + eps4_y(c) * d4y(c);
 }
 
 // 
