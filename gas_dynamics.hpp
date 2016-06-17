@@ -4,9 +4,10 @@
 double gam = 1.4; // adiabatic coefficient; assume calorically perfect gas
 double C1 = 1.458e-6; // Sutherland's law C_1
 double S  = 110.4;    // Sutherland's law S
-double Cp = 1.005e3;  // Isobaric specific heat capacity of air @ 300K
+double Cp = 1.005e3;  // Isobaric specific heat capacity of air @ 300K, [J/(kg*K)]
+double Cv = 0.718e3;  // Isochoric specific heat capacity of air @ 300K, [J/(kg*K)]
 double Pr = 0.713;    // Prandtl number of air @ 300K
-double R  = 287.058;  // Ideal gas constant of air
+double R  = 287.058;  // Ideal gas constant of air, [J/(kg*K)]
 double K  = 0.0271;   // Thermal conductivity of air @ 300 K
 
 // 

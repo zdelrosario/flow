@@ -56,13 +56,8 @@ private:
   std::vector<value_type> right_n_; // Right boundary [normal,parallel]
   std::vector<value_type> top_n_;   // Top boundary [normal,parallel]
   std::vector<value_type> bot_n_;   // Bot boundary [normal,parallel]
-  // Freestream properties
-  // DEBUG -- fix freestream conditions
-  scalar_type rho_inf = 1.1462;
-  scalar_type p_inf = 9.725e4;  // same as exit???
-  scalar_type u_inf = 68.93;    // 
-  scalar_type v_inf = 0.0;      // 
-  scalar_type p_e = 9.725e4;    // 
+  // DEBUG -- fix exit pressure
+  scalar_type p_e = 9.725e4;    // Exit pressure
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
@@ -155,7 +150,7 @@ private:
         res[0] = v_i[0];
         res[1] = v_i[1];
         res[2] = v_i[2];
-        res[3] = p_inf/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
+        res[3] = p_e/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
       }
       else {assert(false);}
       

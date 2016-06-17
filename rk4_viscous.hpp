@@ -6,6 +6,7 @@
 #include "nsflux.hpp"
 #include "gas_dynamics.hpp"
 
+// Jameson timestep estimate
 /** Local time step estimate
  *
  * @param c Cell
@@ -38,6 +39,7 @@ template <typename A>
 typename A::GridScalar rk4_local(A access) {
   using value  = typename A::GridValue;
   using scalar = typename A::GridScalar;
+  short res_type = 0; // -1=all entries, 0=density
 
   std::vector<scalar> H;
   scalar res = -1;
@@ -121,7 +123,15 @@ typename A::GridScalar rk4_local(A access) {
     k1 = (*k1_it).value();    k2 = (*k2_it).value();
     k3 = (*k3_it).value();    k4 = (*k4_it).value();
     f = (*h_it)/scalar(6.0)*(k1+scalar(2)*k2+scalar(2)*k3+k4);
-    res = std::max( (std::abs(f)).max(), res ); // update residual
+
+     // update residual
+    if (res_type == -1)
+      res = std::max( (std::abs(f)).max(), res );
+    else if (res_type == 0)
+      res = std::max( std::abs(f[0]), res );
+    else
+      assert(false);
+
     (*old_it) = y; // store old value
     (*out_it) = y + f;
     // Iterate

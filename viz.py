@@ -14,9 +14,12 @@ e = 1e-5
 # grid_file = sys.argv[1]
 # sol_file  = sys.argv[2]
 
-# DEBUG -- fixed input arguments
+# DEBUG -- solver final output
 grid_file = "solution.grid.dat"
 sol_file  = "solution.val.dat"
+# DEBUG -- solver restart file
+# grid_file = "restart.grid.dat"
+# sol_file  = "restart.val.dat"
 
 # Import grid
 f = open(grid_file,'r')
@@ -33,8 +36,6 @@ for line in f:
 # Reshape arrays
 Xm = np.reshape(X,(n,m))
 Ym = np.reshape(Y,(n,m))
-
-
 
 # Find midpoints of cells
 Xs = []; Ys = []
@@ -73,21 +74,22 @@ W4 = np.reshape(np.array(W4),(-1,m-1))
 # plt.show()
 
 # Global View
-fig = plt.figure()
-# Interior grid lines
-# for ii in range(n-1):
-#     for jj in range(m-1):
-#         plt.plot([Xm[ii][jj],Xm[ii+1][jj]],[Ym[ii][jj],Ym[ii+1][jj]],'k-')
-#         plt.plot([Xm[ii][jj],Xm[ii][jj+1]],[Ym[ii][jj],Ym[ii][jj+1]],'k-')
-# # Right and bottom grid line
-# plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
-# plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
-# Velocity contour
-cs = plt.contourf(Xs,Ys,W2)
-plt.colorbar(cs)
-# Axis limits
-plt.xlim([min(X)-d,max(X)+d])
-plt.ylim([min(Y)-d,max(Y)+d])
+# fig = plt.figure()
+# # Interior grid lines
+# # for ii in range(n-1):
+# #     for jj in range(m-1):
+# #         plt.plot([Xm[ii][jj],Xm[ii+1][jj]],[Ym[ii][jj],Ym[ii+1][jj]],'k-')
+# #         plt.plot([Xm[ii][jj],Xm[ii][jj+1]],[Ym[ii][jj],Ym[ii][jj+1]],'k-')
+# # # Right and bottom grid line
+# # plt.plot([Xm[0][m-1],Xm[n-1][m-1]],[Ym[0][m-1],Ym[n-1][m-1]],'k-')
+# # plt.plot([Xm[n-1][0],Xm[n-1][m-1]],[Ym[n-1][0],Ym[n-1][m-1]],'k-')
+# # Velocity contour
+# cs = plt.contourf(Xs,Ys,W1); plt.title('Density')
+# # cs = plt.contourf(Xs,Ys,W2); plt.title('Horizontal Momentum')
+# plt.colorbar(cs)
+# # Axis limits
+# plt.xlim([min(X)-d,max(X)+d])
+# plt.ylim([min(Y)-d,max(Y)+d])
 
 # # Short View
 # fig = plt.figure()
@@ -107,12 +109,15 @@ plt.ylim([min(Y)-d,max(Y)+d])
 # plt.ylim([-1e-5,e])
 
 # Simple matrix plot
-cs = plt.matshow( W2 )
+cs = plt.matshow( W1 ); plt.title('Density')
+plt.colorbar(cs)
+
+cs = plt.matshow( W2 ); plt.title('Horizontal Momentum')
 plt.colorbar(cs)
 
 # Plot velocity quiver
-# fig = plt.figure()
-# plt.quiver(Xs,Ys,U,V)
+fig = plt.figure()
+plt.quiver(Xs,Ys,U,V)
 
 # Show all plots
 plt.show()
