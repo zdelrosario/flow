@@ -489,7 +489,7 @@ public:
     top_n_.resize(top_b_.size());
     bot_n_.resize(bot_b_.size());
 
-    // 
+    // DEBUT -- set boundary normals manually
     std::fill(left_n_.begin(),left_n_.end(),  
               value_type({-1.0,+0.0,+0.0,+1.0}));
     std::fill(right_n_.begin(),right_n_.end(),

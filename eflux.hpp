@@ -177,16 +177,28 @@ typename Cell::CellScalar eps4_y(Cell c) {
 // 
 // MacCormick 'Jameson' Method
 // 
-double eps = 0.25;
+double eps = 0.25; // Works for oblique shock
 /** Jameson Horizontal Flux
  */
 template <typename Cell>
 typename Cell::CellValue fj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  // Central flux + O(dx^2) dissipation + O(dx^4) dissipation
-  return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
-    - eps * wave_x(c.value()) * dw_dx(c);
+  // Central flux + O(dx^2) dissipation
+  // return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+  //   - eps * wave_x(c.value()) * dw_dx(c);
+  // Central flux + O(dx^2) dissipation, disable on boundary
+  // return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+  //   - eps * wave_x(c.value()) * dw_dx(c) * (1-abs(c.bx()));
+  // Disable only on bottom
+  if (c.bx()==-1.0) {
+    return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) );
+  }
+  else {
+    return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+      - eps * wave_x(c.value()) * dw_dx(c);
+  }
+
 }
 
 /** Jameson Vertical Flux
@@ -195,9 +207,12 @@ template <typename Cell>
 typename Cell::CellValue gj(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  // Central flux + O(dy^2) dissipation + O(dy^4) dissipation
+  // Central flux + O(dy^2) dissipation
   return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
     - eps * wave_y(c.value()) * dw_dy(c);
+  // Central flux + O(dy^2) dissipation, disable on boundary
+  // return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
+  //   - eps * wave_y(c.value()) * dw_dy(c) * (1-abs(c.by()));
 }
 
 // 

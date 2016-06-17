@@ -27,9 +27,12 @@ nu = 15.11e-6 # m^2/s
 # grid_file = sys.argv[1]
 # sol_file  = sys.argv[2]
 
-# DEBUG -- fixed input arguments
+# DEBUG -- solver output file
 grid_file = "solution.grid.dat"
 sol_file  = "solution.val.dat"
+# DEBUG -- solver restart file
+# grid_file = "restart.grid.dat"
+# sol_file  = "restart.val.dat"
 
 ##################################################
 # Post-process data

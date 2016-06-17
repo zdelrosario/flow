@@ -29,11 +29,12 @@ void flat_plate() {
   scalar rho_inf = 1.1462;  // Density
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
-  // Time integration parameters
-  size_type iter_max = 1e3; // max iterations
+  // Solver parameters
+  size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
+  short  res_type = -1;     // Max over all fluxes
   scalar res_min = 1e-3;    // residual convergence tolerance
   // Discretization parameters
   int Nt = 50; // Total vertical cells
@@ -84,7 +85,7 @@ void flat_plate() {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
-    res = rk4_local(val);
+    res = rk4_local(val,res_type);
     // res = euler_local(val);
     // Compute current time
     T = GetTimeMs64();
@@ -135,11 +136,12 @@ void oblique_shock() {
   scalar v_inf   = mach*c_sound*sin(-theta);// Vertical velocity
   scalar rho_inf = 1.1462;  // Density
   scalar e_inf   = 453193;  // Internal energy
-  // Time integration parameters
+  // Solver parameters
   size_type iter_max = 1e6; // max iterations
   size_type n = 0;          // current iterations
   size_type stride  = 1e3;  // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
+  short  res_type = -1;     // Max over all fluxes
   scalar res_min = 1e-8;    // residual convergence tolerance
   // Discretization parameters
   int Nt = 50; // Total vertical cells
@@ -179,7 +181,7 @@ void oblique_shock() {
     // Zero out the RK stages
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
-    res = rk4_local(val);
+    res = rk4_local(val,res_type);
     // res = euler_local(val);
     // Compute current time
     T = GetTimeMs64();
@@ -219,7 +221,7 @@ void oblique_shock() {
 }
 
 int main() {
-  // flat_plate();
-  oblique_shock();
+  flat_plate();
+  // oblique_shock();
   return 0;
 }
