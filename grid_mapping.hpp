@@ -150,4 +150,50 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
   return;
 }
 
+/** Read in a formatted csv file
+ * @tparam V vector<value>
+ * @tparam value = std::valarray<scalar>
+ * 
+ * @param inputname Input file name
+ * @param v Output vector
+ *
+ * @pre v.empty()
+ * @post v contains valarray data from input file
+ */
+template <typename V>
+void readin_val(std::string inputname, V& v) {
+  // Read in file
+  using value = typename V::value_type;
+  using scalar = typename value::value_type;
+  std::ifstream f(inputname.c_str());   // File
+  std::string out;          // Temporary string output
+  std::vector<scalar> tmp;  // Temporary vector output
+  std::size_t found;        // Temporary index
+  
+  // Loop over file values
+  while (f.good()) {
+    std::getline( f, out, ',' );
+    // Check for end of line
+    found = out.find("\n");
+    // If yes, split first and last characters
+    if (found!=std::string::npos) {
+      tmp.push_back(std::stod(out.substr(0,found)));
+      v.push_back(value(tmp.data(),tmp.size()));
+      tmp.clear();
+      try {
+        tmp.push_back(std::stod(out.substr(found+1,std::string::npos)));
+      }
+      catch (std::invalid_argument e) {
+        // End of file
+        break;
+      }
+    }
+    // If no, push back value
+    else {
+      tmp.push_back(std::stod(out));
+    }
+  }
+  return;
+}
+
 #endif // MAP

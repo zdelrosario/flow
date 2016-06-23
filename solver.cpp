@@ -30,7 +30,8 @@ void flat_plate() {
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
   // Solver parameters
-  size_type iter_max = 1e6; // max iterations
+  bool restart_flag = 0;    // Load the restart file?
+  size_type iter_max = 1e4; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
@@ -72,6 +73,16 @@ void flat_plate() {
   }
   right_b[Nt-1] = B_mir;
 
+  /* --- LOAD RESTART IF APPLICABLE --- */
+  if (restart_flag) {
+    V.clear();
+    readin_val("restart.val.dat", V);
+    std::cout << "Restart file read..." << std::endl;
+  }
+  else {
+    std::cout << "Uniform initial conditions assumed..." << std::endl;
+  }
+
   // Define grid
   GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
   auto val = grid.access();
@@ -96,7 +107,7 @@ void flat_plate() {
       std::cout << ", dT=" << dT << "min" << std::endl;
     }
     // Write out restart file
-    if (n % restart == 0) {
+    if ((n % restart == 0) and (n>0)) {
       grid.write_grid("restart.grid.dat");   // grid points
       grid.write_values("restart.val.dat");  // cell values
     }
