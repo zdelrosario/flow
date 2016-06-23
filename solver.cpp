@@ -30,8 +30,8 @@ void flat_plate() {
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
   // Solver parameters
-  bool restart_flag = 0;    // Load the restart file?
-  size_type iter_max = 1e4; // max iterations
+  bool restart_flag = 1;    // Load the restart file?
+  size_type iter_max = 0e0; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
@@ -53,7 +53,6 @@ void flat_plate() {
   // Boundary conditions
   flag B_wall = {{1,2,2,1}}; // Mirror momentum, neumann in density and energy
   flag B_in   = {{3,3,3,3}}; // Inlet condition
-  // flag B_out  = {{4,4,4,4}}; // Outlet condition
   flag B_pres = {{5,5,5,5}}; // Pressure set
   flag B_mir  = {{1,1,2,1}}; // Vertical mirror
   // Reserve space for cell values
@@ -75,9 +74,15 @@ void flat_plate() {
 
   /* --- LOAD RESTART IF APPLICABLE --- */
   if (restart_flag) {
-    V.clear();
-    readin_val("restart.val.dat", V);
-    std::cout << "Restart file read..." << std::endl;
+    std::cout << "Reading restart file..." << std::endl;
+    std::vector<value> V_temp;
+    readin_val("restart.val.dat", V_temp);
+    // Overwrite interior values
+    for (size_type i=0; i<Nt-2; ++i){
+      for (size_type j=0; j<Mt-2; ++j) {
+        V[(i+1)*Mt+(j+1)] = V_temp[i*(Mt-2)+j];
+      }
+    }
   }
   else {
     std::cout << "Uniform initial conditions assumed..." << std::endl;

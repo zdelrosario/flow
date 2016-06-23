@@ -169,7 +169,7 @@ void readin_val(std::string inputname, V& v) {
   std::string out;          // Temporary string output
   std::vector<scalar> tmp;  // Temporary vector output
   std::size_t found;        // Temporary index
-  
+
   // Loop over file values
   while (f.good()) {
     std::getline( f, out, ',' );
@@ -184,6 +184,16 @@ void readin_val(std::string inputname, V& v) {
         tmp.push_back(std::stod(out.substr(found+1,std::string::npos)));
       }
       catch (std::invalid_argument e) {
+        std::cerr << e.what() << std::endl;
+        std::cout << "v.size()=" << v.size() << std::endl;
+        std::cout << "out=" << out << std::endl;
+        // End of file
+        break;
+      }
+      catch (std::bad_alloc e) {
+        std::cerr << e.what() << std::endl;
+        std::cout << "v.size()=" << v.size() << std::endl;
+        std::cout << "out=" << out << std::endl;
         // End of file
         break;
       }
@@ -193,6 +203,9 @@ void readin_val(std::string inputname, V& v) {
       tmp.push_back(std::stod(out));
     }
   }
+
+  // Reorder
+
   return;
 }
 
