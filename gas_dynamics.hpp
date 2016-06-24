@@ -47,6 +47,7 @@ double cf(const Value& w) {
 template <typename Value>
 double muf(const Value& w) {
   return C1*pow(Tf(w),1.5) / (Tf(w)+S);
+  // (void) w; return 1e-5; // DEBUG -- fixed large value
 }
 
 #endif // GAS

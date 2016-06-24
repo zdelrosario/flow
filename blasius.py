@@ -29,11 +29,11 @@ delta = lambda x: 5.0 * sqrt(nu*x/U_inf)
 # sol_file  = sys.argv[2]
 
 # DEBUG -- solver output file
-# grid_file = "solution.grid.dat"
-# sol_file  = "solution.val.dat"
+grid_file = "solution.grid.dat"
+sol_file  = "solution.val.dat"
 # DEBUG -- solver restart file
-grid_file = "restart.grid.dat"
-sol_file  = "restart.val.dat"
+# grid_file = "restart.grid.dat"
+# sol_file  = "restart.val.dat"
 
 ##################################################
 # Post-process data

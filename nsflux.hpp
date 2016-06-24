@@ -165,41 +165,26 @@ typename Cell::CellScalar tau_xy_b(Cell c) {
   return scalar(muf(c.value())) * (df_dx_b(c,v) + df_dy_b(c,u));
 }
 
-/** Viscous Horizontal Flux
- */
-template <typename Cell>
-typename Cell::CellValue fv(Cell c) {
-  typename Cell::CellValue res(c.value().size()); // reserve some space
-  typename Cell::CellScalar ks = typename Cell::CellScalar(K);
-  // resolve typenames with lambda function
-  auto fcn = [](typename Cell::CellValue var) { return Tf(var); };
-  res[0] = 0;
-  res[1] = (tau_xx_r(c) - tau_xx_l(c))/c.dx() 
-         + (tau_xy_t(c) - tau_xy_b(c))/c.dy();
-  // I'm using the cell velocity, rather than an average here -- is this OK?
-  res[3] = (tau_xx_r(c) - tau_xx_l(c))*uf(c.value())/c.dx()
-         + (tau_xy_r(c) - tau_xy_l(c))*vf(c.value())/c.dx()
-         + ks*(df_dx_r(c,fcn) - df_dx_l(c,fcn))/c.dx();
-
-  return res;
-}
-
 /** Viscous Vertical Flux
  */
 template <typename Cell>
-typename Cell::CellValue gv(Cell c) {
+typename Cell::CellValue Fv(Cell c) {
   typename Cell::CellValue res(c.value().size()); // reserve some space
   typename Cell::CellScalar ks = typename Cell::CellScalar(K);
   // resolve typenames with lambda function
   auto fcn = [](typename Cell::CellValue var) { return Tf(var); };
   res[0] = 0;
-  res[1] = 0;
-  res[2] = (tau_xy_r(c) - tau_xy_l(c))/c.dx() 
-         + (tau_yy_t(c) - tau_yy_b(c))/c.dy();
+  res[1] = - (tau_xx_r(c) - tau_xx_l(c))/c.dx()
+           - (tau_xy_t(c) - tau_xy_b(c))/c.dy();
+  res[2] = - (tau_xy_r(c) - tau_xy_l(c))/c.dx() 
+           - (tau_yy_t(c) - tau_yy_b(c))/c.dy();
   // I'm using the cell velocity, rather than an average here -- is this OK?
-  res[3] = (tau_yy_t(c) - tau_yy_b(c))*vf(c.value())/c.dy()
-         + (tau_xy_t(c) - tau_xy_b(c))*uf(c.value())/c.dy()
-         + ks*(df_dy_t(c,fcn) - df_dy_b(c,fcn))/c.dy();
+  res[3] = - (tau_xx_r(c) - tau_xx_l(c))*uf(c.value())/c.dx()
+           - (tau_xy_r(c) - tau_xy_l(c))*vf(c.value())/c.dx()
+           - (tau_yy_t(c) - tau_yy_b(c))*vf(c.value())/c.dy()
+           - (tau_xy_t(c) - tau_xy_b(c))*uf(c.value())/c.dy()
+           - ks*(df_dx_r(c,fcn) - df_dx_l(c,fcn))/c.dx()
+           - ks*(df_dy_t(c,fcn) - df_dy_b(c,fcn))/c.dy();
 
   return res;
 }
@@ -228,9 +213,9 @@ void nsflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
   /* --- SETUP --- */
   using Value = typename CellIter::Value;
   using scalar = typename Value::value_type;
-  size_type cs = (*cell_begin).value().size();
+  // size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
-  Value Fx(cs), Fy(cs);
+  // Value val(cs);
 
   /* --- ITERATE OVER CELLS --- */
   for ( ; cell_begin!=cell_end; ++cell_begin) {
@@ -241,10 +226,7 @@ void nsflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
 // std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
 // std::cout << std::endl;
     /* --- COMPUTE FLUXES --- */
-    Fx = fv(c);
-    Fy = gv(c);
-    // Add the result to the writeout vector
-    z = (Fx+Fy)+z.value();
+    z = -Fv(c)+Value(z.value());
     // Iterate stage_begin to keep up with cell_begin
     ++stage_begin;
   }

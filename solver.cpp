@@ -30,17 +30,17 @@ void flat_plate() {
   scalar v_inf   = 0;       // Vertical velocity
   scalar e_inf   = 298537;  // Internal energy
   // Solver parameters
-  bool restart_flag = 1;    // Load the restart file?
-  size_type iter_max = 0e0; // max iterations
+  bool restart_flag = 0;    // Load the restart file?
+  size_type iter_max = 1e4; // max iterations
   size_type n = 0;          // current iterations
   size_type stride = 1e3;   // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
   short  res_type = -1;     // Max over all fluxes
-  scalar res_min = 1e-3;    // residual convergence tolerance
+  scalar res_min = 1e-2;    // residual convergence tolerance
   // Discretization parameters
-  int Nt = 50; // Total vertical cells
-  int Nbl= 40; // Number of boundary layer cells
-  int Mt = 50; // Total horizontal cells
+  int Nt = 40; // Total vertical cells
+  int Nbl= 30; // Number of boundary layer cells
+  int Mt = 40; // Total horizontal cells
   int buf = 5; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
@@ -78,8 +78,8 @@ void flat_plate() {
     std::vector<value> V_temp;
     readin_val("restart.val.dat", V_temp);
     // Overwrite interior values
-    for (size_type i=0; i<Nt-2; ++i){
-      for (size_type j=0; j<Mt-2; ++j) {
+    for (size_type i=0; i<size_type(Nt-2); ++i){
+      for (size_type j=0; j<size_type(Mt-2); ++j) {
         V[(i+1)*Mt+(j+1)] = V_temp[i*(Mt-2)+j];
       }
     }
