@@ -39,6 +39,8 @@ private:
   size_type n_,m_; // Grid dimensions
   // Grid points
   std::vector<X> x_; // Grid points
+  std::vector<value_type> xi_; // Grid derivatives
+  std::vector<scalar_type> T_; // Grid volume mapping
   // Grid cell values
   std::vector<value_type> v_;     // Grid data
   std::array<std::vector<value_type>,stages_> k_; // Space for RK stages
@@ -421,6 +423,7 @@ public:
    * entire state vector
    *    3 = inflow
    *    4 = outflow
+   *    5 = pressure set
    * 
    * @param left_b  Left boundary condition
    * @param right_b Right boundary condition
@@ -498,6 +501,26 @@ public:
               value_type({+0.0,+1.0,+1.0,+0.0}));
     std::fill(bot_n_.begin(),bot_n_.end(),    
               value_type({+0.0,-1.0,-1.0,+0.0}));
+
+    // Loop over cells, compute grid morph derivatives
+    xi_.reserve((n_-2)*(m_-2));
+    T_.reserve((n_-2)*(m_-2));
+    value_type tmp = {0,0,0,0};
+    for (auto it=cell_begin(); it!=cell_end(); ++it) {
+      // j-derivatives (horizontal)
+      tmp[0] = 0.5*((*it).x(2)[0]-(*it).x(1)[0]
+                   +(*it).x(3)[0]-(*it).x(4)[0]);
+      tmp[1] = 0.5*((*it).x(2)[1]-(*it).x(1)[1]
+                   +(*it).x(3)[1]-(*it).x(4)[1]);
+      // i-derivatives (vertical)
+      tmp[2] = 0.5*((*it).x(1)[0]-(*it).x(4)[0]
+                   +(*it).x(2)[0]-(*it).x(3)[0]);
+      tmp[3] = 0.5*((*it).x(1)[1]-(*it).x(4)[1]
+                   +(*it).x(2)[1]-(*it).x(3)[1]);
+      // Assign
+      xi_[(*it).idx()] = tmp;
+      T_[(*it).idx()] = tmp[0]*tmp[3]-tmp[2]*tmp[1];
+    }
   }
   // 
   // STAGE HANDLING FUNCTIONS
@@ -640,6 +663,13 @@ public:
     }
     Proxy value() {
       return Proxy(i_,j_,grid_,ind_);
+    }
+    /* Grid mapping functions */
+    value_type xi() const {
+      return grid_->xi_[idx()];
+    }
+    scalar_type T() const {
+      return grid_->T_[idx()];
     }
     /* Interior cell index */
     size_type idx() const {

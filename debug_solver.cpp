@@ -176,6 +176,12 @@ int main() {
   std::cout << "bx=" << c.bx() << ", ";
   std::cout << "by=" << c.by() << std::endl;
 
+  // DEBUG -- check grid mapping derivatives
+  std::cout << "xi=[" << c.xi()[0] << ",";
+  std::cout << c.xi()[1] << ",";
+  std::cout << c.xi()[2] << ",";
+  std::cout << c.xi()[3] << "]" << std::endl;
+
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points
   grid.write_values("solution.val.dat");  // cell values

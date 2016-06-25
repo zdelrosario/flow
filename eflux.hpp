@@ -178,41 +178,39 @@ typename Cell::CellScalar eps4_y(Cell c) {
 // MacCormick 'Jameson' Method
 // 
 double eps = 0.25; // Works for oblique shock
-/** Jameson Horizontal Flux
- */
+
 template <typename Cell>
-typename Cell::CellValue fj(Cell c) {
+typename Cell::CellValue fh(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   // Central flux + O(dx^2) dissipation
-  // return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
-  //   - eps * wave_x(c.value()) * dw_dx(c);
-  // Central flux + O(dx^2) dissipation, disable on boundary
-  // return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
-  //   - eps * wave_x(c.value()) * dw_dx(c) * (1-abs(c.bx()));
-  // Disable only on bottom
-  if (c.bx()==-1.0) {
-    return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) );
-  }
-  else {
-    return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
-      - eps * wave_x(c.value()) * dw_dx(c);
-  }
-
+  return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+    - eps * wave_x(c.value()) * dw_dx(c);
+}
+template <typename Cell>
+typename Cell::CellValue fv(Cell c) {
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  // Central flux + O(dx^2) dissipation
+  return scalar(0.5)*( f(value(c.value(-1,0))) + f(value(c.value())) ) 
+    - eps * wave_y(c.value()) * dw_dy(c);
 }
 
-/** Jameson Vertical Flux
- */
 template <typename Cell>
-typename Cell::CellValue gj(Cell c) {
+typename Cell::CellValue gh(Cell c) {
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  // Central flux + O(dy^2) dissipation
+  return scalar(0.5)*( g(value(c.value(0,1))) + g(value(c.value())) ) 
+    - eps * wave_x(c.value()) * dw_dx(c);
+}
+template <typename Cell>
+typename Cell::CellValue gv(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
   // Central flux + O(dy^2) dissipation
   return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
     - eps * wave_y(c.value()) * dw_dy(c);
-  // Central flux + O(dy^2) dissipation, disable on boundary
-  // return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
-  //   - eps * wave_y(c.value()) * dw_dy(c) * (1-abs(c.by()));
 }
 
 // 
@@ -241,24 +239,25 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
   using scalar = typename Value::value_type;
   size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
-  Value Fx(cs), Fy(cs);
+  Value Fp_r(cs), Fp_l(cs);
+  Value Gp_t(cs), Gp_b(cs);
+  Value Xi;
 
   /* --- ITERATE OVER CELLS --- */
   for ( ; cell_begin!=cell_end; ++cell_begin) {
     // Dereference cell
     auto c = *cell_begin;   // Read
     auto z = *stage_begin;  // Write
-    // DEBUG -- Print cell index
-// std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
-// std::cout << std::endl;
+    Xi = c.xi();
     /* --- COMPUTE FLUXES --- */
-    Fx = fj(c) + scalar(-1)*fj(c.neighbor(0,-1));
-    Fy = gj(c) + scalar(-1)*gj(c.neighbor(1,0));
-    // Scale the fluxes by spatial discretization
-    Fx= scalar(1/c.dx())*Fx;
-    Fy= scalar(1/c.dy())*Fy;
+    Fp_r = fh(c)*Xi[3]                - gh(c)*Xi[2];
+    Fp_l = fh(c.neighbor(0,-1))*Xi[3] - gh(c.neighbor(0,-1))*Xi[2];
+    Gp_t =-fv(c)*Xi[1]                + gv(c)*Xi[0];
+    Gp_b =-fv(c.neighbor(+1,0))*Xi[1] + gv(c.neighbor(+1,0))*Xi[0];
     // Add the result to the writeout vector
-    z = scalar(-1)*(Fx+Fy)+z.value();
+    z = scalar(-1)/c.T() 
+      * (Fp_r-Fp_l + Gp_t-Gp_b)
+      + z.value();
     // Iterate stage_begin to keep up with cell_begin
     ++stage_begin;
   }
