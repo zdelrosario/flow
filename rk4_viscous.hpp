@@ -6,6 +6,7 @@
 #include "nsflux.hpp"
 #include "gas_dynamics.hpp"
 
+// Jameson timestep estimate
 /** Local time step estimate
  *
  * @param c Cell
@@ -28,6 +29,7 @@ typename C::CellScalar timestep(C c) {
  *  Uses a local CFL estimate for timestep
  * 
  * @param access Grid access handle
+ * @param res_type Residual type; -1=all entries, 0=density
  * 
  * @post Grid values updated based on fluxes
  *       cell_begin(-1) contains y(t+h)
@@ -35,9 +37,10 @@ typename C::CellScalar timestep(C c) {
  * @return res Residual after computation
  */
 template <typename A>
-typename A::GridScalar rk4_local(A access) {
+typename A::GridScalar rk4_local(A access, short res_type) {
   using value  = typename A::GridValue;
   using scalar = typename A::GridScalar;
+  // short res_type = 0; // -1=all entries, 0=density
 
   std::vector<scalar> H;
   scalar res = -1;
@@ -121,7 +124,15 @@ typename A::GridScalar rk4_local(A access) {
     k1 = (*k1_it).value();    k2 = (*k2_it).value();
     k3 = (*k3_it).value();    k4 = (*k4_it).value();
     f = (*h_it)/scalar(6.0)*(k1+scalar(2)*k2+scalar(2)*k3+k4);
-    res = std::max( (std::abs(f)).max(), res ); // update residual
+
+     // update residual
+    if (res_type == -1)
+      res = std::max( (std::abs(f)).max(), res );
+    else if (res_type == 0)
+      res = std::max( std::abs(f[0]), res );
+    else
+      assert(false);
+
     (*old_it) = y; // store old value
     (*out_it) = y + f;
     // Iterate
@@ -143,7 +154,7 @@ typename A::GridScalar rk4_local(A access) {
 }
 
 template <typename A>
-typename A::GridScalar euler_local(A access) {
+typename A::GridScalar euler_local(A access, short res_type) {
   using value  = typename A::GridValue;
   using scalar = typename A::GridScalar;
 
@@ -171,7 +182,15 @@ typename A::GridScalar euler_local(A access) {
     y = (*it).value();
     f = (*flux_it).value();
     (*out_it) = y + (H.back())*f;
-    res = std::max( (std::abs(f)).max(), res ); // update residual
+    
+    // update residual
+    if (res_type == -1)
+      res = std::max( (std::abs(f)).max(), res );
+    else if (res_type == 0)
+      res = std::max( std::abs(f[0]), res );
+    else
+      assert(false);
+    
     // Iterate
     ++flux_it;
     ++out_it;

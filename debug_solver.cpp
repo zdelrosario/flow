@@ -49,8 +49,10 @@ int main() {
   scalar rho_inf = 1.1462;
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
-  // Time integration parameters
+  scalar p_e     = 9.725e4; // Exit pressure
+  // Solver parameters
   // scalar h = 1e-8;
+  short  res_type = -1;     // Max over all fluxes
   // Discretization parameters
   int Nt = 36; // Total vertical cells
   int Nbl= 23; // Number of boundary layer cells
@@ -89,7 +91,7 @@ int main() {
   right_b[Nt-1] = B_mir;
 
   // Define grid
-  GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
+  GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b,p_e);
   auto val = grid.access();
 
   // DEBUG -- Check bc flags
@@ -144,7 +146,7 @@ int main() {
   std::cout<<"y(t=0)="; val(i,j).print(); std::cout<<std::endl;   // y(t=0)
   scalar res;
   // res = rk4(h,val); // Global timestep
-  res = rk4_local(val); // Local timestep
+  res = rk4_local(val,res_type); // Local timestep
   std::cout<<"k1=";     val(i,j,0).print(); std::cout<<std::endl; // k1
   std::cout<<"k2=";     val(i,j,1).print(); std::cout<<std::endl; // k2
   std::cout<<"k3=";     val(i,j,2).print(); std::cout<<std::endl; // k3
@@ -174,6 +176,12 @@ int main() {
   // DEBUG -- Check boundary flags
   std::cout << "bx=" << c.bx() << ", ";
   std::cout << "by=" << c.by() << std::endl;
+
+  // DEBUG -- check grid mapping derivatives
+  std::cout << "xi=[" << c.xi()[0] << ",";
+  std::cout << c.xi()[1] << ",";
+  std::cout << c.xi()[2] << ",";
+  std::cout << c.xi()[3] << "]" << std::endl;
 
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points

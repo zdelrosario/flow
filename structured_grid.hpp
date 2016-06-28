@@ -39,6 +39,8 @@ private:
   size_type n_,m_; // Grid dimensions
   // Grid points
   std::vector<X> x_; // Grid points
+  std::vector<value_type> xi_; // Grid derivatives
+  std::vector<scalar_type> T_; // Grid volume mapping
   // Grid cell values
   std::vector<value_type> v_;     // Grid data
   std::array<std::vector<value_type>,stages_> k_; // Space for RK stages
@@ -56,34 +58,17 @@ private:
   std::vector<value_type> right_n_; // Right boundary [normal,parallel]
   std::vector<value_type> top_n_;   // Top boundary [normal,parallel]
   std::vector<value_type> bot_n_;   // Bot boundary [normal,parallel]
-  // Freestream properties
-  // DEBUG -- fix freestream conditions
-  scalar_type rho_inf = 1.1462;
-  scalar_type p_inf = 9.725e4;  // same as exit???
-  scalar_type u_inf = 68.93;    // 
-  scalar_type v_inf = 0.0;      // 
-  scalar_type p_e = 9.725e4;    // 
+  // DEBUG -- fix exit pressure
+  scalar_type p_e = 9.725e4;    // Exit pressure
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
-  /** Project velocity against normal
-   *
-   * @param v Input state vector
-   * @param n Normal against which to project
-   * 
-   * @return u_n Velocity projected on normal
-   */
+  // Project velocity on normal
   scalar_type norm_vel(const value_type& v, const value_type& n) {
     return uf(v)*n[0] + vf(v)*n[1];
   }
-  /** Project velocity against parallel
-   *
-   * @param v Input state vector
-   * @param n Normal against which to project
-   * 
-   * @return u_n Velocity projected on parallel
-   */
-  scalar_type par_vel(const value_type& v, const value_type& n) {
+  // Project velocity on parallel
+  scalar_type para_vel(const value_type& v, const value_type& n) {
     return uf(v)*n[2] + vf(v)*n[3];
   }
   /** Boundary condition helper function
@@ -105,7 +90,6 @@ private:
    *    3 = inflow
    *    4 = outflow
    *    5 = pressure set
-   *    6 = slip wall
    * 
    * @return State vector obeying boundary conditions
    */
@@ -114,21 +98,22 @@ private:
                         const value_type& n,
                         const value_type& v_i ) {
     // Reserve some space
-    value_type res; res.resize(f.size());
+    value_type res; res.resize(f.size());    
 
     // Characteristic (Full-state) BC
     unsigned bc_type = 0;
     for (size_type i=0; i!=f.size(); ++i) {
-      if ( (f[i]==3) or (f[i]==4) 
-        or (f[i]==5) or (f[i]==6) )
+      if ( f[i] >= 3 )
         bc_type = f[i];
     }
     // Apply characteristic BC
     if (bc_type!=0) {
       // Project velocity
-      scalar_type U_i,U_o;
-      U_i = norm_vel(v_i,n);
+      scalar_type U_i,U_o,U_ip,U_op;
+      U_i = norm_vel(v_i,n); // Normal projection
       U_o = norm_vel(v_o,n);
+      U_ip = para_vel(v_i,n); // Parallel projection
+      U_op = para_vel(v_o,n);
       // Compute Riemann invariants
       scalar_type C_i = cf(v_i);
       scalar_type C_o = cf(v_o);
@@ -167,22 +152,10 @@ private:
         res[0] = v_i[0];
         res[1] = v_i[1];
         res[2] = v_i[2];
-        res[3] = p_inf/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
-      }
-      // Slip wall -- assumes flat walls
-      else if (bc_type==6) {
-        // Negate the projected velocity
-        scalar_type u_n =-norm_vel(v_i,n);
-        // Maintain the parallel velocity
-        scalar_type u_p = par_vel(v_i,n);
-        // Set the appropriate values
-        res[0] = v_i[0];
-        res[1] = res[0]*(u_n*n[0] + u_p*n[2]);
-        res[2] = res[0]*(u_n*n[1] + u_p*n[3]);
-        res[3] = v_i[3];
+        res[3] = p_e/(gam-1) + 0.5*(pow(v_i[1],2)+pow(v_i[2],2))/v_i[0];
       }
       else {assert(false);}
-      // Return ghost cell value
+      
       return res;
     }
 
@@ -451,7 +424,6 @@ public:
    *    3 = inflow
    *    4 = outflow
    *    5 = pressure set
-   *    6 = slip wall
    * 
    * @param left_b  Left boundary condition
    * @param right_b Right boundary condition
@@ -469,7 +441,10 @@ public:
                  std::vector<flag_type>& left_b,
                  std::vector<flag_type>& right_b,
                  std::vector<flag_type>& top_b,
-                 std::vector<flag_type>& bot_b) {
+                 std::vector<flag_type>& bot_b,
+                 scalar_type p) {
+    // Exit pressure
+    p_e = p;
     // Copy grid dimensions
     n_ = n; m_ = m;
     // Copy interior cell values
@@ -509,9 +484,9 @@ public:
     bot_.resize(m_-2);
     // Iterate horizontally over top and bottom,
     // skip the left and right edges
-    for (size_type i=0; i+2<m_; ++i) {
-      top_[i] = *(v.begin()+i+1);
-      bot_[i] = *(v.end()-m_+i+1);
+    for (size_type j=0; j+2<m_; ++j) {
+      top_[j] = *(v.begin()+j+1);
+      bot_[j] = *(v.end()-m_+j+1);
     }
 
     // DEBUG -- fix boundary normals for a box
@@ -520,15 +495,66 @@ public:
     top_n_.resize(top_b_.size());
     bot_n_.resize(bot_b_.size());
 
-    // Set boundary cell normals/parallels
+    // DEBUT -- set boundary normals manually
     std::fill(left_n_.begin(),left_n_.end(),  
               value_type({-1.0,+0.0,+0.0,+1.0}));
     std::fill(right_n_.begin(),right_n_.end(),
               value_type({+1.0,+0.0,+0.0,-1.0}));
-    std::fill(top_n_.begin(),top_n_.end(),    
-              value_type({+0.0,+1.0,+1.0,+0.0}));
-    std::fill(bot_n_.begin(),bot_n_.end(),    
-              value_type({+0.0,-1.0,-1.0,+0.0}));
+    // std::fill(top_n_.begin(),top_n_.end(),    
+    //           value_type({+0.0,+1.0,+1.0,+0.0}));
+    // std::fill(bot_n_.begin(),bot_n_.end(),    
+    //           value_type({+0.0,-1.0,-1.0,+0.0}));
+    value_type tmp = {{0,0,0,0}};
+    scalar_type mag;
+    Cell c;
+    for (size_type j=0; j+2<m_; ++j) {
+      c = cell(size_type(1),size_type(j+1));
+      /* Top */
+      // Parallel
+      tmp[2] = c.x(2)[0] - c.x(1)[0]; // dx
+      tmp[3] = c.x(2)[1] - c.x(1)[1]; // dy
+      mag = sqrt(pow(tmp[2],2)+pow(tmp[3],2));
+      tmp[2] = tmp[2] / mag; // Normalize
+      tmp[3] = tmp[3] / mag;
+      // Normal
+      tmp[0] = -tmp[3];
+      tmp[0] = +tmp[2];
+      // Writeout
+      top_n_[j] = tmp;
+
+      /* Bottom */
+      // Parallel
+      tmp[2] = c.x(3)[0] - c.x(4)[0]; // dx
+      tmp[3] = c.x(3)[1] - c.x(4)[1]; // dy
+      mag = sqrt(pow(tmp[2],2)+pow(tmp[3],2));
+      tmp[2] = tmp[2] / mag; // Normalize
+      tmp[3] = tmp[3] / mag;
+      // Normal
+      tmp[0] = -tmp[3];
+      tmp[0] = +tmp[2];
+      // Writeout
+      bot_n_[j] = tmp;
+    }
+
+    // Loop over cells, compute grid morph derivatives
+    xi_.reserve((n_-2)*(m_-2));
+    T_.reserve((n_-2)*(m_-2));
+    // value_type tmp = {0,0,0,0};
+    for (auto it=cell_begin(); it!=cell_end(); ++it) {
+      // j-derivatives (horizontal)
+      tmp[0] = 0.5*((*it).x(2)[0]-(*it).x(1)[0]
+                   +(*it).x(3)[0]-(*it).x(4)[0]);
+      tmp[1] = 0.5*((*it).x(2)[1]-(*it).x(1)[1]
+                   +(*it).x(3)[1]-(*it).x(4)[1]);
+      // i-derivatives (vertical)
+      tmp[2] = 0.5*((*it).x(1)[0]-(*it).x(4)[0]
+                   +(*it).x(2)[0]-(*it).x(3)[0]);
+      tmp[3] = 0.5*((*it).x(1)[1]-(*it).x(4)[1]
+                   +(*it).x(2)[1]-(*it).x(3)[1]);
+      // Assign
+      xi_[(*it).idx()] = tmp;
+      T_[(*it).idx()] = tmp[0]*tmp[3]-tmp[2]*tmp[1];
+    }
   }
   // 
   // STAGE HANDLING FUNCTIONS
@@ -648,10 +674,22 @@ public:
             // Set the boundary flags
             set_bnd();
           }
+    // Invalid constructor
+    Cell() {};
   public:
     // Public types
     typedef value_type CellValue;
     typedef scalar_type CellScalar;
+    // Assignment
+    Cell operator=(Cell c) {
+      grid_ = c.grid_;
+      i_    = c.i_;
+      j_    = c.j_;
+      ind_  = c.ind_;
+      bx_   = c.bx_;
+      by_   = c.by_;
+      return *this;
+    }
     // Forward assignment operator
     CellValue operator=(CellValue val) {
       return Proxy(i_,j_,grid_,ind_)=val;
@@ -671,6 +709,13 @@ public:
     }
     Proxy value() {
       return Proxy(i_,j_,grid_,ind_);
+    }
+    /* Grid mapping functions */
+    value_type xi() const {
+      return grid_->xi_[idx()];
+    }
+    scalar_type T() const {
+      return grid_->T_[idx()];
     }
     /* Interior cell index */
     size_type idx() const {
@@ -705,6 +750,14 @@ public:
     /** Returns cell corner point
      * @param n Corner point index
      * @pre 1<=n<=4
+     *
+     * Schematic:  y
+     * 1      2   / \
+     *   ----      |
+     *  |    |      --> x, j
+     *  |    |     |
+     *   ----     \ /
+     * 4      3    i
      */
     X x(size_type n) {
       if (n==1) {

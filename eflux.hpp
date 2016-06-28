@@ -13,8 +13,8 @@
 
 using size_type = unsigned;
 
-double k2 = 1;
-double k4 = 1.0/32.0; // Jameson recommends 1/32 for transonic flows
+double k2 = 0.1;
+double k4 = 0.02; // Jameson recommends 1/32 for transonic flows
 double c4 = 2;
 
 /** Horizontal Wave Speed
@@ -119,118 +119,98 @@ typename Cell::CellScalar sy(Cell c) {
                    (pf(c.value(1,0))+2*pf(c.value())+pf(c.value(-1,0))) );
 }
 
-// Boundary helper
-template <typename Cell>
-typename Cell::CellScalar bcx(Cell c) {
-  return (1.0-abs(c.bx()));
-}
-template <typename Cell>
-typename Cell::CellScalar bcy(Cell c) {
-  return (1.0-abs(c.by()));
-}
-
 // Dissipative Coefficients
 template <typename Cell>
 typename Cell::CellScalar eps2_x(Cell c) {
-  // Standard JST
-  // return k2 * sx(c) * rx(c);
-  // Disable on boundary
   return k2 * sx(c) * rx(c) * (1-abs(c.bx()));
-  // Disable
+  // return 0.1 * rx(c);
   // (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps2_y(Cell c) {
-  // Standard JST
-  // return k2 * sy(c) * ry(c);
-  // Disable on boundary
   return k2 * sy(c) * ry(c) * (1-abs(c.by()));
-  // Disable
+  // return 0.1 * ry(c);
   // (void) c; return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_x(Cell c) {
-  // Standard JST
-  // return std::max(0.,k4*rx(c)-c4*eps2_x(c));
-
-  // disable on boundary
-  return k4*rx(c) * 
-         (1-abs(c.bx())); 
-
-  // disable on or near boundary
+  return std::max(0.,k4*rx(c)-c4*eps2_x(c))*(1-abs(c.bx()));
   // return k4*rx(c) * 
-  //        (1-abs(c.neighbor(0,+1).bx())) *
-  //        (1-abs(c.bx())) * 
-  //        (1-abs(c.neighbor(0,-1).bx())); 
-
-  // Disable
-  (void) c; return 0.;
+  //        (1-abs(c.bx())); // disable on boundary
+  // return 0.;
 }
 template <typename Cell>
 typename Cell::CellScalar eps4_y(Cell c) {
-  // Standard JST
-  // return std::max(0.,k4*ry(c)-c4*eps2_y(c));
-
-  // disable on boundary
-  return k4*ry(c) * 
-         (1-abs(c.by()));
-
-  // disable on or near boundary
+  return std::max(0.,k4*ry(c)-c4*eps2_y(c))*(1-abs(c.by()));
   // return k4*ry(c) * 
-  //        (1-abs(c.neighbor(+1,0).by())) *
-  //        (1-abs(c.by())) * 
-  //        (1-abs(c.neighbor(-1,0).by()));
-
-  // Disable
-  // (void) c; return 0.;
+  //        (1-abs(c.by())); // disable on boundary
+  // return 0.;
 }
 
-// 4th Order Difference -- artificial dissipation
-template <typename Cell>
-typename Cell::CellValue d4x(Cell c) {
-  // Standard JST
-  return dw_dx(c.neighbor(0,1))
-     -2.*dw_dx(c)
-        +dw_dx(c.neighbor(0,-1));
-  // Disable boundary terms
-  // return dw_dx(c.neighbor(0,+1))*bcx(c.neighbor(0,+1))
-  //    -2.*dw_dx(c)               *bcx(c)
-  //       +dw_dx(c.neighbor(0,-1))*bcx(c.neighbor(0,-1));
-}
-template <typename Cell>
-typename Cell::CellValue d4y(Cell c) {
-  // Standard JST
-  return dw_dy(c.neighbor(1,0))
-     -2.*dw_dy(c)
-        +dw_dy(c.neighbor(-1,0));
-  // Disable boundary terms
-  // return dw_dy(c.neighbor(+1,0))*bcy(c.neighbor(+1,0))
-  //    -2.*dw_dy(c)               *bcy(c)
-  //       +dw_dy(c.neighbor(-1,0))*bcy(c.neighbor(-1,0));
-}
+// 
+// JST FLUXES
+// 
+// /** Jameson Horizontal Flux
+//  */
+// template <typename Cell>
+// typename Cell::CellValue fj(Cell c) {
+//   using scalar = typename Cell::CellScalar;
+//   using value  = typename Cell::CellValue;
+//   // Central flux + O(dx^2) dissipation + O(dx^4) dissipation
+//   return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
+//     - eps2_x(c) * dw_dx(c)
+//     + eps4_x(c) * (dw_dx(c.neighbor(0,1))-2.*dw_dx(c)+dw_dx(c.neighbor(0,-1)));
+// }
 
-/** Jameson Horizontal Flux
- */
+// /** Jameson Vertical Flux
+//  */
+// template <typename Cell>
+// typename Cell::CellValue gj(Cell c) {
+//   using scalar = typename Cell::CellScalar;
+//   using value  = typename Cell::CellValue;
+//   // Central flux + O(dy^2) dissipation + O(dy^4) dissipation
+//   return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
+//     - eps2_y(c) * dw_dy(c)
+//     + eps4_y(c) * (dw_dy(c.neighbor(1,0))-2.*dw_dy(c)+dw_dy(c.neighbor(-1,0)));
+// }
+
+// 
+// MacCormick 'Jameson' Method
+// 
+double eps = 0.25; // Works for oblique shock
+
 template <typename Cell>
-typename Cell::CellValue fj(Cell c) {
+typename Cell::CellValue fh(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  // Central flux + O(dx^2) dissipation + O(dx^4) dissipation
+  // Central flux + O(dx^2) dissipation
   return scalar(0.5)*( f(value(c.value(0,1))) + f(value(c.value())) ) 
-    - eps2_x(c) * dw_dx(c)
-    + eps4_x(c) * d4x(c);
+    - eps * wave_x(c.value()) * dw_dx(c);
 }
-
-/** Jameson Vertical Flux
- */
 template <typename Cell>
-typename Cell::CellValue gj(Cell c) {
+typename Cell::CellValue fv(Cell c) {
   using scalar = typename Cell::CellScalar;
   using value  = typename Cell::CellValue;
-  // Central flux + O(dy^2) dissipation + O(dy^4) dissipation
+  // Central flux + O(dx^2) dissipation
+  return scalar(0.5)*( f(value(c.value(-1,0))) + f(value(c.value())) ) 
+    - eps * wave_y(c.value()) * dw_dy(c);
+}
+
+template <typename Cell>
+typename Cell::CellValue gh(Cell c) {
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  // Central flux + O(dy^2) dissipation
+  return scalar(0.5)*( g(value(c.value(0,1))) + g(value(c.value())) ) 
+    - eps * wave_x(c.value()) * dw_dx(c);
+}
+template <typename Cell>
+typename Cell::CellValue gv(Cell c) {
+  using scalar = typename Cell::CellScalar;
+  using value  = typename Cell::CellValue;
+  // Central flux + O(dy^2) dissipation
   return scalar(0.5)*( g(value(c.value(-1,0))) + g(value(c.value())) ) 
-    - eps2_y(c) * dw_dy(c)
-    + eps4_y(c) * d4y(c);
+    - eps * wave_y(c.value()) * dw_dy(c);
 }
 
 // 
@@ -259,24 +239,25 @@ void eflux(CellIter cell_begin, CellIter cell_end, CellIter stage_begin) {
   using scalar = typename Value::value_type;
   size_type cs = (*cell_begin).value().size();
   // Intermediate vectors
-  Value Fx(cs), Fy(cs);
+  Value Fp_r(cs), Fp_l(cs);
+  Value Gp_t(cs), Gp_b(cs);
+  Value Xi;
 
   /* --- ITERATE OVER CELLS --- */
   for ( ; cell_begin!=cell_end; ++cell_begin) {
     // Dereference cell
     auto c = *cell_begin;   // Read
     auto z = *stage_begin;  // Write
-    // DEBUG -- Print cell index
-// std::cout << "cell index=" << c.idx() << " (" << c.iy() << "," << c.jx() << ")";
-// std::cout << std::endl;
+    Xi = c.xi();
     /* --- COMPUTE FLUXES --- */
-    Fx = fj(c) + scalar(-1)*fj(c.neighbor(0,-1));
-    Fy = gj(c) + scalar(-1)*gj(c.neighbor(1,0));
-    // Scale the fluxes by spatial discretization
-    Fx= scalar(1/c.dx())*Fx;
-    Fy= scalar(1/c.dy())*Fy;
+    Fp_r = fh(c)*Xi[3]                - gh(c)*Xi[2];
+    Fp_l = fh(c.neighbor(0,-1))*Xi[3] - gh(c.neighbor(0,-1))*Xi[2];
+    Gp_t =-fv(c)*Xi[1]                + gv(c)*Xi[0];
+    Gp_b =-fv(c.neighbor(+1,0))*Xi[1] + gv(c.neighbor(+1,0))*Xi[0];
     // Add the result to the writeout vector
-    z = scalar(-1)*(Fx+Fy)+z.value();
+    z = scalar(-1)/c.T() 
+      * (Fp_r-Fp_l + Gp_t-Gp_b)
+      + z.value();
     // Iterate stage_begin to keep up with cell_begin
     ++stage_begin;
   }

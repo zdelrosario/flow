@@ -17,6 +17,7 @@ e = 1e-5
 
 U_inf = 68.93 # m/s
 nu = 15.11e-6 # m^2/s
+delta = lambda x: 5.0 * sqrt(nu*x/U_inf)
 
 # Command line argument form
 # if len(sys.argv) < 2:
@@ -27,10 +28,10 @@ nu = 15.11e-6 # m^2/s
 # grid_file = sys.argv[1]
 # sol_file  = sys.argv[2]
 
-# DEBUG -- fixed input arguments
+# DEBUG -- solver output file
 grid_file = "solution.grid.dat"
 sol_file  = "solution.val.dat"
-
+# DEBUG -- solver restart file
 # grid_file = "restart.grid.dat"
 # sol_file  = "restart.val.dat"
 
@@ -82,6 +83,11 @@ W2 = np.reshape(np.array(W2),(-1,m-1))
 W3 = np.reshape(np.array(W3),(-1,m-1))
 W4 = np.reshape(np.array(W4),(-1,m-1))
 
+# Find plate start
+buf = 5
+x_start = Xm[n-1,buf]
+x_end   = Xm[n-1,m-1]
+
 # Non-dimensionalized results
 ind = 20    # Horizontal station index
 U_c = U[:,ind]
@@ -107,6 +113,10 @@ fig = plt.figure()
 # Velocity contour
 cs = plt.contourf(Xs,Ys,W2)
 plt.colorbar(cs)
+# Boundary layer profile
+Xbl = np.linspace(x_start,x_end)
+Dbl = [delta(x-x_start) for x in Xbl]
+plt.plot(Xbl,Dbl,'k')
 # Axis limits
 plt.xlim([min(X)-d,max(X)+d])
 plt.ylim([min(Y)-d,max(Y)+d])

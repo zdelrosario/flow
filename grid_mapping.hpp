@@ -21,17 +21,17 @@
  * @post v Contains the x,y coordinates of the grid points
  */
 template <typename V>
-void make_flat_plate(int Nt, int Mt, V& v) {
+void make_rectangle(int Nt, int Mt, V& v) {
   // Grid dimensions
   double H = 0.5;
   double L = 0.5;
   // Grid mapping equations
   auto x_mesh = [&](int j) {
     return double(L/Mt*j);
-  }
+  };
   auto y_mesh = [&](int i) {
     return double(H/Nt*i);
-  }
+  };
 
   // Store grid values
   for (int i=0; i<Nt; ++i) {    // vertical index
@@ -62,13 +62,17 @@ void make_flat_plate(int Nt, int Mt, V& v) {
  * @post v Contains the x,y coordinates of the grid points
  */
 template <typename V>
-void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
+void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad, 
+                     double H=0.1, double L=0.1) {
   /* --- SETUP --- */
   // int Nt  = 34; // Total vertical mesh points
   // int Nbl = 22; // Boundary layer vertical points
 
-  double H = 0.1;        // Domain height
-  double L = 0.1;        // Plate length
+  // DEBUG
+  std::cout << "H=" << H << ", L=" << L << std::endl;
+
+  // double H = 0.1;        // Domain height
+  // double L = 0.1;        // Plate length
   double y_fm = 5.4e-4;  // Height of fine mesh
   double r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
   double alp = 2;        // Expansion coefficient
@@ -103,7 +107,8 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
 
   // Vertical point function
   auto y_mesh = [&](int i) {
-    if (i<=Nbl) {
+    // if (i<=Nbl) {
+    if (i<Nbl) {
       return y_i(i);
     }
     else {
@@ -147,6 +152,102 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad) {
       // std::cout << v[i*Mt+j][0] << std::endl;
     }
   }
+  return;
+}
+
+/** Create mesh for bump problem
+ *
+ * @tparam V Array-like container, 2-Dimensional
+ * 
+ * @param Nt  Total vertical mesh points
+ * @param Nbl Boundary vertical mesh points
+ * @param Mt  Total horizontal mesh points
+ * @param v   Array to which we will write the grid points
+ * @param pad Number of cells to pad forward and aft of plate
+ * @param t   Thickness factor; 0<t<1
+ * 
+ * @pre Nbl < Nt
+ * @pre size(v) == Nt*Mt
+ * @pre for all i, s.t. 0<=i<=Nt*Mt, have size(v[i]) == 2
+ * 
+ * @post v Contains the x,y coordinates of the grid points
+ */
+template <typename V>
+void make_bump(int Nt, int Nbl, int Mt, V& v, short pad, double t) {
+  double H = 10.0;
+  double L = 1.0;
+  // Stretch for boundary layer
+  make_flat_plate(Nt, Nbl, Mt, v, pad, H, L);
+  // Compute surface profile coefficients
+  double a,b,c,c1,c2;
+  a = v[0*Mt+pad][0];
+  b = v[0*Mt+Mt-1-pad][0];
+  c = (a+b)*0.5;
+  c2= t*(b-a)*0.5; // 0.5 since half the airfoil
+  c1= c2/pow(a-c,2);
+  // DEBUG
+  // std::cout << "a=" << a << ",b=" << b << ",c=" << c << std::endl;
+  // std::cout << "c1=" << c1 << ",c2=" << c2 << std::endl;
+  // Add perturbations in y for bump
+  for (int j=pad; j+pad<Mt; ++j) { // horizontal
+    for (int i=0; i<Nt; ++i) {     // vertical
+      // x = v[i*Mt+j][0]
+      v[i*Mt+j][1] += -c1*pow(v[i*Mt+j][0]-c,2)+c2;
+    }
+  }
+  return;
+}
+
+/** Read in a formatted csv file
+ * @tparam V vector<value>
+ * @tparam value = std::valarray<scalar>
+ * 
+ * @param inputname Input file name
+ * @param v Output vector
+ *
+ * @pre v.empty()
+ * @post v contains valarray data from input file
+ */
+template <typename V>
+void readin_val(std::string inputname, V& v) {
+  // Read in file
+  using value = typename V::value_type;
+  using scalar = typename value::value_type;
+  std::ifstream f(inputname.c_str());   // File
+  std::string out;          // Temporary string output
+  std::vector<scalar> tmp;  // Temporary vector output
+  std::size_t found;        // Temporary index
+
+  // Loop over file values
+  while (f.good()) {
+    std::getline( f, out, ',' );
+    // Check for end of line
+    found = out.find("\n");
+    // If yes, split first and last characters
+    if (found!=std::string::npos) {
+      tmp.push_back(std::stod(out.substr(0,found)));
+      v.push_back(value(tmp.data(),tmp.size()));
+      tmp.clear();
+      try {
+        tmp.push_back(std::stod(out.substr(found+1,std::string::npos)));
+      }
+      catch (std::invalid_argument e) {
+        // End of file
+        break;
+      }
+      catch (std::bad_alloc e) {
+        // End of file
+        break;
+      }
+    }
+    // If no, push back value
+    else {
+      tmp.push_back(std::stod(out));
+    }
+  }
+
+  // Reorder
+
   return;
 }
 
