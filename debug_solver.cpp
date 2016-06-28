@@ -49,6 +49,7 @@ int main() {
   scalar rho_inf = 1.1462;
   scalar v_inf   = 0;
   scalar e_inf   = 298537;
+  scalar p_e     = 9.725e4; // Exit pressure
   // Solver parameters
   // scalar h = 1e-8;
   short  res_type = -1;     // Max over all fluxes
@@ -90,7 +91,7 @@ int main() {
   right_b[Nt-1] = B_mir;
 
   // Define grid
-  GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b);
+  GridType grid(Nt,Mt,V,X,left_b,right_b,top_b,bot_b,p_e);
   auto val = grid.access();
 
   // DEBUG -- Check bc flags

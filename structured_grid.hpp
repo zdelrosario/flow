@@ -63,15 +63,13 @@ private:
   // 
   // PRIVATE HELPER FUNCTIONS
   // 
-  /** Project velocity
-   *
-   * @param v Input state vector
-   * @param n Normal against which to project
-   * 
-   * @return u_n Velocity projected on normal
-   */
-  scalar_type proj_vel(const value_type& v, const value_type& n) {
+  // Project velocity on normal
+  scalar_type norm_vel(const value_type& v, const value_type& n) {
     return uf(v)*n[0] + vf(v)*n[1];
+  }
+  // Project velocity on parallel
+  scalar_type para_vel(const value_type& v, const value_type& n) {
+    return uf(v)*n[2] + vf(v)*n[3];
   }
   /** Boundary condition helper function
    * @brief Switches between neumann and dirichlet boundary
@@ -105,15 +103,17 @@ private:
     // Characteristic (Full-state) BC
     unsigned bc_type = 0;
     for (size_type i=0; i!=f.size(); ++i) {
-      if ( (f[i]==3) or (f[i]==4) )
+      if ( f[i] >= 3 )
         bc_type = f[i];
     }
     // Apply characteristic BC
     if (bc_type!=0) {
       // Project velocity
-      scalar_type U_i,U_o;
-      U_i = proj_vel(v_i,n);
-      U_o = proj_vel(v_o,n);
+      scalar_type U_i,U_o,U_ip,U_op;
+      U_i = norm_vel(v_i,n); // Normal projection
+      U_o = norm_vel(v_o,n);
+      U_ip = para_vel(v_i,n); // Parallel projection
+      U_op = para_vel(v_o,n);
       // Compute Riemann invariants
       scalar_type C_i = cf(v_i);
       scalar_type C_o = cf(v_o);
@@ -441,7 +441,10 @@ public:
                  std::vector<flag_type>& left_b,
                  std::vector<flag_type>& right_b,
                  std::vector<flag_type>& top_b,
-                 std::vector<flag_type>& bot_b) {
+                 std::vector<flag_type>& bot_b,
+                 scalar_type p) {
+    // Exit pressure
+    p_e = p;
     // Copy grid dimensions
     n_ = n; m_ = m;
     // Copy interior cell values
@@ -481,9 +484,9 @@ public:
     bot_.resize(m_-2);
     // Iterate horizontally over top and bottom,
     // skip the left and right edges
-    for (size_type i=0; i+2<m_; ++i) {
-      top_[i] = *(v.begin()+i+1);
-      bot_[i] = *(v.end()-m_+i+1);
+    for (size_type j=0; j+2<m_; ++j) {
+      top_[j] = *(v.begin()+j+1);
+      bot_[j] = *(v.end()-m_+j+1);
     }
 
     // DEBUG -- fix boundary normals for a box
@@ -497,15 +500,46 @@ public:
               value_type({-1.0,+0.0,+0.0,+1.0}));
     std::fill(right_n_.begin(),right_n_.end(),
               value_type({+1.0,+0.0,+0.0,-1.0}));
-    std::fill(top_n_.begin(),top_n_.end(),    
-              value_type({+0.0,+1.0,+1.0,+0.0}));
-    std::fill(bot_n_.begin(),bot_n_.end(),    
-              value_type({+0.0,-1.0,-1.0,+0.0}));
+    // std::fill(top_n_.begin(),top_n_.end(),    
+    //           value_type({+0.0,+1.0,+1.0,+0.0}));
+    // std::fill(bot_n_.begin(),bot_n_.end(),    
+    //           value_type({+0.0,-1.0,-1.0,+0.0}));
+    value_type tmp = {{0,0,0,0}};
+    scalar_type mag;
+    Cell c;
+    for (size_type j=0; j+2<m_; ++j) {
+      c = cell(size_type(1),size_type(j+1));
+      /* Top */
+      // Parallel
+      tmp[2] = c.x(2)[0] - c.x(1)[0]; // dx
+      tmp[3] = c.x(2)[1] - c.x(1)[1]; // dy
+      mag = sqrt(pow(tmp[2],2)+pow(tmp[3],2));
+      tmp[2] = tmp[2] / mag; // Normalize
+      tmp[3] = tmp[3] / mag;
+      // Normal
+      tmp[0] = -tmp[3];
+      tmp[0] = +tmp[2];
+      // Writeout
+      top_n_[j] = tmp;
+
+      /* Bottom */
+      // Parallel
+      tmp[2] = c.x(3)[0] - c.x(4)[0]; // dx
+      tmp[3] = c.x(3)[1] - c.x(4)[1]; // dy
+      mag = sqrt(pow(tmp[2],2)+pow(tmp[3],2));
+      tmp[2] = tmp[2] / mag; // Normalize
+      tmp[3] = tmp[3] / mag;
+      // Normal
+      tmp[0] = -tmp[3];
+      tmp[0] = +tmp[2];
+      // Writeout
+      bot_n_[j] = tmp;
+    }
 
     // Loop over cells, compute grid morph derivatives
     xi_.reserve((n_-2)*(m_-2));
     T_.reserve((n_-2)*(m_-2));
-    value_type tmp = {0,0,0,0};
+    // value_type tmp = {0,0,0,0};
     for (auto it=cell_begin(); it!=cell_end(); ++it) {
       // j-derivatives (horizontal)
       tmp[0] = 0.5*((*it).x(2)[0]-(*it).x(1)[0]
@@ -640,10 +674,22 @@ public:
             // Set the boundary flags
             set_bnd();
           }
+    // Invalid constructor
+    Cell() {};
   public:
     // Public types
     typedef value_type CellValue;
     typedef scalar_type CellScalar;
+    // Assignment
+    Cell operator=(Cell c) {
+      grid_ = c.grid_;
+      i_    = c.i_;
+      j_    = c.j_;
+      ind_  = c.ind_;
+      bx_   = c.bx_;
+      by_   = c.by_;
+      return *this;
+    }
     // Forward assignment operator
     CellValue operator=(CellValue val) {
       return Proxy(i_,j_,grid_,ind_)=val;
@@ -704,6 +750,14 @@ public:
     /** Returns cell corner point
      * @param n Corner point index
      * @pre 1<=n<=4
+     *
+     * Schematic:  y
+     * 1      2   / \
+     *   ----      |
+     *  |    |      --> x, j
+     *  |    |     |
+     *   ----     \ /
+     * 4      3    i
      */
     X x(size_type n) {
       if (n==1) {

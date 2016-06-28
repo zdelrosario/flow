@@ -1,6 +1,13 @@
 import sys
-import matplotlib.pyplot as plt
 import numpy as np
+
+import matplotlib
+# choose the backend to handle window geometry
+matplotlib.use("Qt4Agg")
+# Import pyplot
+import matplotlib.pyplot as plt
+
+offset = [(1400,0),(0,500),(700,500),(1400,500)] # Plot window locations
 
 d = 0.01
 e = 1e-5
@@ -112,12 +119,67 @@ W4 = np.reshape(np.array(W4),(-1,m-1))
 cs = plt.matshow( W1 ); plt.title('Density')
 plt.colorbar(cs)
 
-cs = plt.matshow( W2 ); plt.title('Horizontal Momentum')
-plt.colorbar(cs)
+# cs = plt.matshow( W2 ); plt.title('Horizontal Momentum')
+# plt.colorbar(cs)
 
-# Plot velocity quiver
+##################################################
+# Density
+##################################################
+fig = plt.figure()
+# Velocity contour
+cs = plt.contourf(Xs,Ys,W1)
+plt.colorbar(cs)
+plt.title("Density")
+# Axis limits
+plt.xlim([min(X)-d,max(X)+d])
+plt.ylim([min(Y)-d,max(Y)+d])
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[0][0],offset[0][1],dx,dy)
+
+##################################################
+# Velocity
+##################################################
+fig = plt.figure()
+# Velocity contour
+cs = plt.contourf(Xs,Ys,(W2**2+W3**2)/W1**2)
+plt.colorbar(cs)
+plt.title("Velocity Magnitude")
+# Axis limits
+plt.xlim([min(X)-d,max(X)+d])
+plt.ylim([min(Y)-d,max(Y)+d])
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[1][0],offset[1][1],dx,dy)
+
+##################################################
+# Velocity Quiver
+##################################################
 fig = plt.figure()
 plt.quiver(Xs,Ys,U,V)
+plt.title("Velocity Quiver")
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[2][0],offset[2][1],dx,dy)
+
+##################################################
+# Pressure
+##################################################
+fig = plt.figure()
+# Velocity contour
+cs = plt.contourf(Xs,Ys,(0.4)*(W4-0.5*(W2**2+W3**2)))
+plt.colorbar(cs)
+plt.title("Pressure")
+# Axis limits
+plt.xlim([min(X)-d,max(X)+d])
+plt.ylim([min(Y)-d,max(Y)+d])
+# Set plot location on screen
+manager = plt.get_current_fig_manager()
+x,y,dx,dy = manager.window.geometry().getRect()
+manager.window.setGeometry(offset[3][0],offset[3][1],dx,dy)
 
 # Show all plots
 plt.show()
