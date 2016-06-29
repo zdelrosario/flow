@@ -12,21 +12,13 @@ offset = [(1400,0),(0,500),(700,500),(1400,500)] # Plot window locations
 d = 0.01
 e = 1e-5
 
-# Command line argument form
-# if len(sys.argv) < 2:
-#     print('Usage:')
-#     print('    python {} [grid file] [solution file]'.format(sys.argv[0]))
-#     exit()
+# Airfoil output
+grid_file = "airfoil.grid.dat"
+sol_file  = "airfoil.val.dat"
+res_file  = "airfoil.res.dat"
 
-# grid_file = sys.argv[1]
-# sol_file  = sys.argv[2]
-
-# DEBUG -- solver final output
-grid_file = "solution.grid.dat"
-sol_file  = "solution.val.dat"
-# DEBUG -- solver restart file
-# grid_file = "restart.grid.dat"
-# sol_file  = "restart.val.dat"
+# Level number
+nlevels = 40
 
 # Import grid
 f = open(grid_file,'r')
@@ -138,8 +130,9 @@ ylimits = [0., 2.]
 # Density
 ##################################################
 fig = plt.figure()
-# Velocity contour
-cs = plt.contourf(Xs,Ys,W1)
+# Density contour
+rho_levels = np.linspace(np.min(W1),np.max(W1),nlevels)
+cs = plt.contourf(Xs,Ys,W1,rho_levels)
 plt.colorbar(cs)
 plt.title("Density")
 # Axis limits
@@ -160,7 +153,10 @@ Vm= np.sqrt(V2)
 P = 0.4*(W4-0.5*V2)
 C = np.sqrt(1.4*P/W1)
 M = Vm/C
-cs = plt.contourf(Xs,Ys,M)
+mach_levels = np.linspace(np.min(M),np.max(M),nlevels)
+cs = plt.contourf(Xs,Ys,M,mach_levels)
+cl = plt.contour(Xs,Ys,M,[1],colors='k')
+plt.clabel(cl, inline=0)
 plt.colorbar(cs)
 plt.title("Mach Number")
 # Axis limits
@@ -189,8 +185,10 @@ manager.window.setGeometry(offset[2][0],offset[2][1],dx,dy)
 # Pressure
 ##################################################
 fig = plt.figure()
-# Velocity contour
-cs = plt.contourf(Xs,Ys,(0.4)*(W4-0.5*(W2**2+W3**2)))
+# Pressure contour
+Pr = (0.4)*(W4-0.5*(W2**2+W3**2))
+p_levels = np.linspace(np.min(Pr),np.max(Pr),nlevels)
+cs = plt.contourf(Xs,Ys,Pr,p_levels)
 plt.colorbar(cs)
 plt.title("Pressure")
 # Axis limits
