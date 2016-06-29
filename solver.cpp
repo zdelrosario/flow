@@ -25,11 +25,11 @@ typedef GridType::size_type size_type;
 // 
 void bump() {
   /* --- SOLVER PARAMETERS --- */
-  scalar rho_inf = 1.1462;  // Density
-  scalar u_inf   = 7.72e2;   // Horizontal velocity
-  scalar p_e     = 1.2199e5; // Exit pressure
-  scalar e_inf   = 5.6406e5;  // Internal energy
-  scalar t       = 0.12;   // Thickness
+  scalar rho_inf = 1.1462;    // Density
+  scalar u_inf   = 7.72e2;    // Horizontal velocity
+  scalar p_e     = 6.0240e5;  // Exit pressure
+  scalar e_inf   = 1.6119e6;  // Internal energy
+  scalar t       = 0.12;      // Thickness
   // Solver parameters
   bool restart_flag = 0;    // Load the restart file?
   size_type iter_max = 1e6; // max iterations
@@ -39,14 +39,13 @@ void bump() {
   short  res_type = -1;     // Density
   scalar res_min = 1e-3;    // residual convergence tolerance
   // Discretization parameters
-  int Nt = 40; // Total vertical cells
+  int Nt = 50; // Total vertical cells
   int Nbl= 20; // Number of boundary layer cells
-  int Mt = 40; // Total horizontal cells
-  int buf = 5; // Freestream buffer cells
+  int Mt = 50; // Total horizontal cells
+  int buf= 5; // Freestream buffer cells
 
   /* --- FLAT PLATE BOUNDARY LAYER GRID --- */
   std::vector<coord> X((Nt-1)*(Mt-1));      // Generate grid points for
-  // make_flat_plate((Nt-1),Nbl,(Mt-1),X,buf); // boundary layer simulation
   make_bump(Nt-1,Nbl,Mt-1,X,buf,t); // Bump
 
   /* --- SET UP GRID --- */
@@ -97,6 +96,7 @@ void bump() {
 
   /* --- RUN SOLVER --- */
   scalar res = 1e10;
+  std::vector<scalar> res_hist;
   uint64 T_0 = GetTimeMs64();
   uint64 T;
   double dT;
@@ -105,12 +105,13 @@ void bump() {
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
     res = rk4_local(val,res_type);
-    // res = euler_local(val);
     // Compute current time
     T = GetTimeMs64();
     dT = double(T-T_0)/1e3/60.; // minutes
     // Print back residual, execution time
     if (n % stride == 0) {
+      // Record residual
+      res_hist.push_back(res);
       std::cout << "n=" << n << ", res=" << res;
       std::cout << ", dT=" << dT << "min" << std::endl;
     }
@@ -140,6 +141,15 @@ void bump() {
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points
   grid.write_values("solution.val.dat");  // cell values
+  // Residual history
+  std::ofstream f_out("solution.res.dat");
+  // Write out elements
+  size_type num = 0;
+  for (auto it=res_hist.begin(); it!=res_hist.end(); ++it) {
+    f_out << (*it) << "," << num << std::endl;
+    num += stride;
+  }
+  f_out << res << "," << n << std::endl;
   return;
 }
 
@@ -281,7 +291,7 @@ void oblique_shock() {
   scalar e_inf   = 453193;  // Internal energy
   scalar p_e     = 9.725e4; // Exit pressure
   // Solver parameters
-  size_type iter_max = 1e6; // max iterations
+  size_type iter_max = 1e1; // max iterations
   size_type n = 0;          // current iterations
   size_type stride  = 1e3;  // iteration stride for console printback
   size_type restart = 1e4;  // iteration stride for restart file
@@ -318,6 +328,7 @@ void oblique_shock() {
 
   /* --- RUN SOLVER --- */
   scalar res = 1e10;
+  std::vector<scalar> res_hist; // residual history
   uint64 T_0 = GetTimeMs64();
   uint64 T;
   double dT;
@@ -326,7 +337,8 @@ void oblique_shock() {
     grid.fill_stages({0,0,0,0});
     // Take RK4 time step
     res = rk4_local(val,res_type);
-    // res = euler_local(val);
+    // Record
+    res_hist.push_back(res);
     // Compute current time
     T = GetTimeMs64();
     dT = double(T-T_0)/1e3/60.; // minutes
@@ -361,6 +373,12 @@ void oblique_shock() {
   /* --- FILE OUTPUT --- */
   grid.write_grid("solution.grid.dat");   // grid points
   grid.write_values("solution.val.dat");  // cell values
+  // Residual history
+  std::ofstream f_out("solution.res.dat");
+  // Write out elements
+  for (auto it=res_hist.begin(); it!=res_hist.end(); ++it) {
+    f_out << (*it) << std::endl;
+  }
   return;
 }
 

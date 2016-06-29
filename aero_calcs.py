@@ -4,9 +4,9 @@ nu  = 1.544e-5  # Kinematic viscosity of air, [m^2/s]
 gam = 1.4       # Adiabatic coefficient [-]
 rho = 1.1462    # Density of air, [kg/m^3]
 # Chosen dimensionless parameters
-Re = 5e7
-# M  = 0.9
-M = 2.0
+Re = 9e6
+M  = 0.9
+# M = 2.0
 # Calculated parameters
 U_inf = Re * nu / D
 P_inf = rho/gam * (U_inf/M)**2

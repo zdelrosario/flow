@@ -65,21 +65,14 @@ template <typename V>
 void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad, 
                      double H=0.1, double L=0.1) {
   /* --- SETUP --- */
-  // int Nt  = 34; // Total vertical mesh points
-  // int Nbl = 22; // Boundary layer vertical points
 
-  // DEBUG
-  std::cout << "H=" << H << ", L=" << L << std::endl;
-
-  // double H = 0.1;        // Domain height
-  // double L = 0.1;        // Plate length
   double y_fm = 5.4e-4;  // Height of fine mesh
   double r_min = 0.2 / (Nbl-2); // Minimum spacing ratio
   double alp = 2;        // Expansion coefficient
 
   double dx = L / (Mt-2*pad);
 
-  /* --- FIND PARAMETER VALUES --- */
+  /* --- FINE MESH --- */
   // Objective function for k_fm
   auto f_fm = [&r_min,&Nbl](double k) {
     return r_min-(exp(k/(Nbl-2))-1)/(exp(k)-1);
@@ -88,6 +81,7 @@ void make_flat_plate(int Nt, int Nbl, int Mt, V& v, short pad,
   double k_fm = secant(2.0,3.0,f_fm);
   double dy_cm = y_fm*( (exp(k_fm*(Nbl-1)/(Nbl-2))-1)/(exp(k_fm)-1) - 1);
 
+  /* --- COARSE MESH --- */
   // Objective function for k_cm
   auto f_cm = [&dy_cm,&H,&y_fm,&Nt,&Nbl](double k) {
     return dy_cm - (H-y_fm)*(exp(k/(Nt-Nbl))-1)/(exp(k)-1);

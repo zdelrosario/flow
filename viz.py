@@ -73,6 +73,10 @@ W2 = np.reshape(np.array(W2),(-1,m-1))
 W3 = np.reshape(np.array(W3),(-1,m-1))
 W4 = np.reshape(np.array(W4),(-1,m-1))
 
+##################################################
+# Plots
+##################################################
+
 # Plot Gridpoints
 # fig = plt.figure()
 # plt.plot(X,Y,'.k')
@@ -122,6 +126,14 @@ plt.colorbar(cs)
 # cs = plt.matshow( W2 ); plt.title('Horizontal Momentum')
 # plt.colorbar(cs)
 
+
+
+# Plot limits
+xlimits = [min(X)-d,max(X)+d] # Full domain
+ylimits = [min(Y)-d,max(Y)+d]
+xlimits = [1., 3.] # Close view
+ylimits = [0., 2.]
+
 ##################################################
 # Density
 ##################################################
@@ -131,24 +143,29 @@ cs = plt.contourf(Xs,Ys,W1)
 plt.colorbar(cs)
 plt.title("Density")
 # Axis limits
-plt.xlim([min(X)-d,max(X)+d])
-plt.ylim([min(Y)-d,max(Y)+d])
+plt.xlim(xlimits)
+plt.ylim(ylimits)
 # Set plot location on screen
 manager = plt.get_current_fig_manager()
 x,y,dx,dy = manager.window.geometry().getRect()
 manager.window.setGeometry(offset[0][0],offset[0][1],dx,dy)
 
 ##################################################
-# Velocity
+# Mach
 ##################################################
 fig = plt.figure()
 # Velocity contour
-cs = plt.contourf(Xs,Ys,(W2**2+W3**2)/W1**2)
+V2= (W2**2+W3**2)/W1**2
+Vm= np.sqrt(V2)
+P = 0.4*(W4-0.5*V2)
+C = np.sqrt(1.4*P/W1)
+M = Vm/C
+cs = plt.contourf(Xs,Ys,M)
 plt.colorbar(cs)
-plt.title("Velocity Magnitude")
+plt.title("Mach Number")
 # Axis limits
-plt.xlim([min(X)-d,max(X)+d])
-plt.ylim([min(Y)-d,max(Y)+d])
+plt.xlim(xlimits)
+plt.ylim(ylimits)
 # Set plot location on screen
 manager = plt.get_current_fig_manager()
 x,y,dx,dy = manager.window.geometry().getRect()
@@ -160,6 +177,9 @@ manager.window.setGeometry(offset[1][0],offset[1][1],dx,dy)
 fig = plt.figure()
 plt.quiver(Xs,Ys,U,V)
 plt.title("Velocity Quiver")
+# Axis limits
+plt.xlim(xlimits)
+plt.ylim(ylimits)
 # Set plot location on screen
 manager = plt.get_current_fig_manager()
 x,y,dx,dy = manager.window.geometry().getRect()
@@ -174,8 +194,8 @@ cs = plt.contourf(Xs,Ys,(0.4)*(W4-0.5*(W2**2+W3**2)))
 plt.colorbar(cs)
 plt.title("Pressure")
 # Axis limits
-plt.xlim([min(X)-d,max(X)+d])
-plt.ylim([min(Y)-d,max(Y)+d])
+plt.xlim(xlimits)
+plt.ylim(ylimits)
 # Set plot location on screen
 manager = plt.get_current_fig_manager()
 x,y,dx,dy = manager.window.geometry().getRect()
