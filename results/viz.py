@@ -20,6 +20,15 @@ res_file  = "airfoil.res.dat"
 # Level number
 nlevels = 40
 
+# Import convergence history
+f = open(res_file,'r')
+res_hist = []
+it_hist = []
+for line in f:
+    pair = line.split(",")
+    res_hist.append(float(pair[0]))
+    it_hist.append(int(pair[1]))
+
 # Import grid
 f = open(grid_file,'r')
 # First line is grid dimensions
@@ -65,9 +74,21 @@ W2 = np.reshape(np.array(W2),(-1,m-1))
 W3 = np.reshape(np.array(W3),(-1,m-1))
 W4 = np.reshape(np.array(W4),(-1,m-1))
 
+rho_inf = W1[0,0]
+u_inf = W2[0,0] / rho_inf
+
 ##################################################
 # Plots
 ##################################################
+
+# Residual history
+fig = plt.figure()
+plt.plot(it_hist,res_hist)
+plt.xlabel("Iteration count")
+plt.ylabel("Residual")
+plt.title("Convergence History: Symmetric Airfoil")
+plt.yscale('log')
+plt.xscale('log')
 
 # Plot Gridpoints
 # fig = plt.figure()
@@ -199,5 +220,17 @@ manager = plt.get_current_fig_manager()
 x,y,dx,dy = manager.window.geometry().getRect()
 manager.window.setGeometry(offset[3][0],offset[3][1],dx,dy)
 
+##################################################
+# Drag computation
+##################################################
+ind_start = 3
+ind_end = Pr.shape[1]-4
+dy = -(Ym[-1,ind_start:ind_end]-Ym[-2,ind_start:ind_end])
+d_Cd = dy * Pr[-1,ind_start:ind_end]
+Cd = np.sum(d_Cd) / (0.5*rho_inf*u_inf**2)
+print("Cd = {}".format(Cd))
+
 # Show all plots
 plt.show()
+
+
