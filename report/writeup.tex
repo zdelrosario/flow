@@ -1,0 +1,80 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{mathabx}
+\usepackage{cancel}
+\usepackage{fancyhdr}
+
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+
+\pagestyle{fancy}
+
+%------------------------------------------------------
+%	BEGIN DOCUMENT
+%------------------------------------------------------
+
+\begin{document}
+
+%------------------------------------------------------
+%	HEADER
+%------------------------------------------------------
+
+\fancyhead[LO,L]{AA214c}
+\fancyhead[CO,C]{Final Project}
+\fancyhead[RO,R]{Zachary del Rosario}
+
+%------------------------------------------------------
+%	CONTENT
+%------------------------------------------------------
+
+% -------------------------
+\section{Introduction}
+% -------------------------
+
+% -------------------------
+\section{Solver}
+% -------------------------
+This section details all the pieces of the solver. The scheme is designed to solve the full 2-D Navier-Stokes equations using a finite volume method using local time-stepping. The equations to be solved are
+
+\begin{equation}
+\begin{aligned}
+\frac{\partial \rho}{\partial t} + \frac{\partial}{\partial x_i} \rho u_i &= 0, \\
+\frac{\partial \rho u_i}{\partial t} + \frac{\partial}{\partial x_j}\left(\rho u_iu_j + P\delta_{ij} - \tau_{ij} \right) &= 0, \\
+\frac{\partial \rho E}{\partial t} + \frac{\partial}{\partial x_i}\left(\rho u_i H + Q_i - \tau_{ij}u_j\right) &= 0,
+\end{aligned}
+\end{equation}
+
+where $\tau_{ij}$ is the viscous stress tensor, $\rho E=\frac{P}{\gamma-1}+\frac{1}{2}\rho(u^2+v^2)$ is the internal energy, and $\rho H=\rho E+P$ is the internal enthalpy. The equations are solved in conservation form, and the inviscid and viscous terms are treated separately.
+
+\subsection{Euler Fluxes}
+JST
+
+\subsection{Viscous Fluxes}
+Dual grid
+
+\subsection{Time Stepping}
+RK4 with local CFL estimate
+
+\subsection{Boundary Conditions}
+Characteristic boundary conditions
+
+% -------------------------
+\section{Test Case: Oblique Shock}
+% -------------------------
+Convergence and contour plots
+
+% -------------------------
+\section{Flat Plate Boundary Layer}
+
+% -------------------------
+Convergence and contour plots
+
+% -------------------------
+\section{Transonic Symmetric Airfoil}
+% -------------------------
+Convergence and contour plots
+
+% -------------------------
+\section{Conclusion}
+% -------------------------
+
+\end{document}
