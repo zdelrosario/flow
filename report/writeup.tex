@@ -166,6 +166,24 @@ Then the ghost state value is
 \end{aligned}
 \end{equation}
 
+\subsection{Curvilinear Grids}
+In order to study flows about curved surfaces, we must include some mechanism to handle deformed grids. For the solver, we handle this by considering a transformation from the computational domain in $\xi,\eta$ to a physical one in $x,y$. This transformation is fully detailed in MacCormick's notes, and is implemented by solving the modified conservation form
+
+\begin{equation}
+\frac{\partial W}{\partial t} + \frac{1}{V}\frac{\partial F'}{\partial \xi} + \frac{1}{V}\frac{\partial G'}{\partial \eta} = 0,
+\end{equation}
+
+where $V=\frac{\partial x}{\partial \xi}\frac{\partial y}{\partial \eta} - \frac{\partial x}{\partial \eta}\frac{\partial y}{\partial \xi}$ and
+
+\begin{equation}
+\begin{aligned}
+F' &= F\frac{\partial y}{\partial \eta} - G\frac{\partial x}{\partial \eta}, \\
+G' &=-F\frac{\partial y}{\partial \xi} + G\frac{\partial x}{\partial \xi}.
+\end{aligned}
+\end{equation}
+
+The partials involving $\xi,\eta$ and $x,y$ are computed by 1-st order finite differences on the grid points; the coordinates $\xi,\eta$ are made to correspond to the indices $i,j$.
+
 \subsection{Convergence}
 The Residual described below is defined as
 
@@ -186,7 +204,7 @@ Our first test case is an attempt to reproduce the classical result of a Blasius
 W_{\infty} = (1.1462 \text{kg}/\text{m}^3,79.0076\text{kg}*\text{m}/\text{s},0\text{kg}*\text{m}/\text{s},3.4218\times10^5\text{J}/\text{m}^3)^T.
 \end{equation*}
 
-The left boundary is a subsonic inlet, the top and right subsonic outlets, and the bottom is a mixture of a symmetry condition (where the vertical momentum is mirrored) forward of the plate, and a wall condition modeling the plate. Results are shown in Figure \ref{fig:plate_contour} through \ref{fig:plate_convergence}. Fairly poor agreement is seen in both comparisons against the Blasius solution -- this is a major issue, but I've been unable to figure out what's wrong.
+The left boundary is a subsonic inlet, the top and right subsonic outlets, and the bottom is a mixture of a symmetry condition (where the vertical momentum is mirrored) forward of the plate, and a wall condition modeling the plate. The mesh is stretched in the vertical direction according to MacCormick's notes, using 30 points in the boundary layer, and a total of 40 points each in the vertical and horizontal directions. Results are shown in Figure \ref{fig:plate_contour} through \ref{fig:plate_convergence}. Fairly poor agreement is seen in both comparisons against the Blasius solution -- this is a major issue, but I've been unable to figure out what's wrong.
 
 \begin{figure}[!ht]
 \centering
@@ -211,6 +229,7 @@ The left boundary is a subsonic inlet, the top and right subsonic outlets, and t
 \end{figure}
 
 \newpage
+% -------------------------
 \subsection{Transonic Symmetric Airfoil}
 This test case considers a $12\%$ thick bi-parabolic airfoil. The inlet state is given
 
@@ -218,7 +237,7 @@ This test case considers a $12\%$ thick bi-parabolic airfoil. The inlet state is
 W_{\infty} = (1.1462 \text{kg}/\text{m}^3,1.5928\times10^2\text{kg}*\text{m}/\text{s},0\text{kg}*\text{m}/\text{s},5.9861\times10^4\text{J}/\text{m}^3)^T,
 \end{equation*}
 
-which corresponds to $M=0.9$ and $Re=9\times10^6$. A subsonic inlet is used for the left boundary, while the top and right boundaries are subsonic outlets. A symmetry condition is used for the bottom forward and aft of the airfoil, while the airfoil itself has a wall condition.
+which corresponds to $M=0.9$ and $Re=9\times10^6$. A subsonic inlet is used for the left boundary, while the top and right boundaries are subsonic outlets. A symmetry condition is used for the bottom forward and aft of the airfoil, while the airfoil itself has a wall condition. The mesh is stretched in the vertical direction as before, and a parabolic perturbation is added to the points in the middle (horizontally) to represent the airfoil.
 
 \begin{figure}[!ht]
 \centering
